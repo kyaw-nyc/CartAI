@@ -1,36 +1,183 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CartAI - AI-Powered Shopping Negotiation Platform
 
-## Getting Started
+A real-time negotiation platform where AI agents negotiate on your behalf with multiple stores to find the best deals based on your priorities.
 
-First, run the development server:
+## How It Works
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+CartAI uses multiple AI models to simulate realistic negotiations between buyers and sellers. The system creates a balanced marketplace where neither party always wins.
+
+### Conversation Flow
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    INITIAL CONVERSATION                          │
+│                    Uses: Your OpenAI API                         │
+│                    Model: GPT-4o                                 │
+└──────────────────────────────────────────────────────────────────┘
+                                ↓
+                      User Selects Priority
+                                ↓
+                     ┌─────────────────┐
+                     │  MAP SELECTION  │
+                     │  Click a Store  │
+                     └─────────────────┘
+                                ↓
+          ┌────────────────────────────────────────────┐
+          │        SINGLE STORE NEGOTIATION            │
+          └────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│  Store Selected          Buyer Agent         Seller Agent       │
+├─────────────────────────────────────────────────────────────────┤
+│  H&M                     GPT-4o-mini         GPT-4o             │
+│  (OpenRouter)            (Your API)          (Your API)         │
+├─────────────────────────────────────────────────────────────────┤
+│  Zara                    Claude 3 Haiku      Claude 3.5 Sonnet  │
+│  (Anthropic)             (OpenRouter)        (OpenRouter)       │
+├─────────────────────────────────────────────────────────────────┤
+│  Hugo Boss               DeepSeek Chat       DeepSeek Chat      │
+│  (Gemini/DeepSeek)       (OpenRouter)        (OpenRouter)       │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Balanced Negotiation System
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### How Winners Are Determined
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The system uses realistic negotiation dynamics where either party can win based on several factors:
 
-## Learn More
+**Seller Behavior (30/30/40 split):**
+- 30% chance: Seller holds firm (minimal concessions)
+- 30% chance: Seller gives moderate discounts
+- 40% chance: Seller negotiates normally
 
-To learn more about Next.js, take a look at the following resources:
+**Flexibility Levels:**
+- Low flexibility: 2% price reduction per round
+- Medium flexibility: 4% price reduction per round
+- High flexibility: 6% price reduction per round
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Random Elements:**
+- 15% chance seller increases price in early rounds (testing buyer commitment)
+- 30% chance seller refuses rush delivery requests
+- Price variations of ±3% for realism
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Outcome Categories
 
-## Deploy on Vercel
+**Buyer Wins (15%+ under budget)**
+- Seller made significant concessions
+- Buyer's negotiation was effective
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Fair Deal (5-15% under budget)**
+- Both parties compromised
+- Balanced negotiation
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Market Rate (within 5% of budget)**
+- Seller held ground
+- Standard market pricing
+
+**Seller Wins (5%+ over budget)**
+- Seller defended premium pricing
+- Buyer pays more for quality/speed/sustainability
+
+## Priority System
+
+Users adjust three sliders that always total 100%:
+
+- **Speed**: How quickly you need delivery
+- **Carbon**: Environmental impact priority
+- **Price**: Best deal focus
+
+The system uses the dominant priority to guide the buyer agent's negotiation strategy.
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **State Management**: Zustand
+- **Database**: Supabase (Auth + Storage)
+- **AI Models**:
+  - OpenAI GPT-4o (Your API)
+  - Anthropic Claude 3.5 Sonnet (OpenRouter)
+  - DeepSeek Chat (OpenRouter)
+- **Maps**: Google Maps JavaScript API
+- **Styling**: Tailwind CSS
+- **Animations**: Framer Motion
+
+## Setup
+
+1. Clone the repository
+```bash
+git clone <your-repo-url>
+cd productscout
+```
+
+2. Install dependencies
+```bash
+npm install
+```
+
+3. Set up environment variables
+```bash
+cp .env.example .env.local
+```
+
+Add your API keys:
+```
+OPENAI_API_KEY=your_openai_key
+OPENROUTER_API_KEY=your_openrouter_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_maps_key
+```
+
+4. Set up Supabase tables
+
+Run the SQL commands in `supabase/schema.sql` to create:
+- `profiles` table
+- `negotiations` table
+- Row Level Security policies
+
+5. Run development server
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+## Features
+
+- **Real-time AI Negotiations**: Watch agents negotiate in real-time
+- **Multiple Priorities**: Balance speed, carbon footprint, and price
+- **Interactive Map**: Select stores in Manhattan to negotiate with
+- **Conversation History**: Save and reload past negotiations
+- **Win/Loss Analysis**: See who won each negotiation and why
+- **Model Transparency**: Know which AI model is handling each conversation
+
+## Performance Optimizations
+
+- 4 negotiation rounds (optimized from 6)
+- Reduced API response times (0.5-0.6 temperature)
+- Token limits for faster generation (80-100 tokens)
+- Minimal delays between messages (100-200ms)
+
+## Project Structure
+
+```
+├── app/                    # Next.js app router pages
+├── components/             # React components
+│   ├── auth/              # Authentication components
+│   ├── landing/           # Landing page components
+│   ├── map/               # Map view components
+│   └── negotiation/       # Negotiation UI components
+├── lib/
+│   ├── agents/            # AI agent logic
+│   ├── api/               # API clients
+│   ├── store/             # Zustand state management
+│   ├── supabase/          # Database client
+│   └── utils/             # Helper functions
+└── types/                 # TypeScript types
+```
+
+## License
+
+MIT
