@@ -3,10 +3,15 @@ import { persist } from 'zustand/middleware'
 import { ChatMessage, NegotiationResult, AgentMessage, SavedConversation } from '@/types/negotiation'
 import { Priority } from '@/types/product'
 import { Offer } from '@/types/negotiation'
+import { saveNegotiation, loadNegotiations, deleteNegotiation as deleteNegotiationDb } from '@/lib/supabase/negotiations'
 
 interface NegotiationStore {
   // Current conversation ID
   currentConversationId: string | null
+
+  // User ID for Supabase
+  userId: string | null
+  setUserId: (userId: string | null) => void
 
   // Chat state
   chatMessages: ChatMessage[]
@@ -39,10 +44,11 @@ interface NegotiationStore {
 
   // Conversation history
   savedConversations: SavedConversation[]
-  saveCurrentConversation: () => void
+  saveCurrentConversation: () => Promise<void>
   loadConversation: (id: string) => void
-  deleteConversation: (id: string) => void
+  deleteConversation: (id: string) => Promise<void>
   startNewConversation: () => void
+  loadUserNegotiations: () => Promise<void>
 
   // Actions
   reset: () => void
@@ -53,6 +59,7 @@ export const useNegotiationStore = create<NegotiationStore>()(
     (set, get) => ({
       // Initial state
       currentConversationId: null,
+      userId: null,
       chatMessages: [],
       product: null,
       quantity: null,
@@ -65,6 +72,9 @@ export const useNegotiationStore = create<NegotiationStore>()(
       negotiationProgress: 0,
       negotiationResult: null,
       savedConversations: [],
+
+      // Set user ID
+      setUserId: (userId) => set({ userId }),
 
       // Chat actions
       addChatMessage: (message) =>
@@ -131,10 +141,35 @@ export const useNegotiationStore = create<NegotiationStore>()(
         }),
 
       // Conversation history
-      saveCurrentConversation: () =>
-        set((state) => {
-          const {
-            currentConversationId,
+      saveCurrentConversation: async () => {
+        const state = get()
+        const {
+          currentConversationId,
+          userId,
+          chatMessages,
+          product,
+          quantity,
+          budget,
+          selectedPriority,
+          negotiationMessages,
+          negotiationResult,
+          savedConversations,
+        } = state
+
+        // Generate title from product or first message
+        const title = product || chatMessages[0]?.content.slice(0, 30) || 'New Conversation'
+        const now = new Date()
+
+        let conversation: SavedConversation
+
+        if (currentConversationId) {
+          // Update existing conversation
+          conversation = {
+            id: currentConversationId,
+            title,
+            createdAt:
+              savedConversations.find((c) => c.id === currentConversationId)?.createdAt || now,
+            lastUpdated: now,
             chatMessages,
             product,
             quantity,
@@ -142,55 +177,49 @@ export const useNegotiationStore = create<NegotiationStore>()(
             selectedPriority,
             negotiationMessages,
             negotiationResult,
-            savedConversations,
-          } = state
-
-          // Generate title from product or first message
-          const title = product || chatMessages[0]?.content.slice(0, 30) || 'New Conversation'
-          const now = new Date()
-
-          if (currentConversationId) {
-            // Update existing conversation
-            return {
-              savedConversations: savedConversations.map((conv) =>
-                conv.id === currentConversationId
-                  ? {
-                      ...conv,
-                      title,
-                      lastUpdated: now,
-                      chatMessages,
-                      product,
-                      quantity,
-                      budget,
-                      selectedPriority,
-                      negotiationMessages,
-                      negotiationResult,
-                    }
-                  : conv
-              ),
-            }
-          } else {
-            // Create new conversation
-            const newConversation: SavedConversation = {
-              id: Date.now().toString(),
-              title,
-              createdAt: now,
-              lastUpdated: now,
-              chatMessages,
-              product,
-              quantity,
-              budget,
-              selectedPriority,
-              negotiationMessages,
-              negotiationResult,
-            }
-
-            return {
-              currentConversationId: newConversation.id,
-              savedConversations: [newConversation, ...savedConversations],
-            }
           }
-        }),
+
+          set({
+            savedConversations: savedConversations.map((conv) =>
+              conv.id === currentConversationId ? conversation : conv
+            ),
+          })
+        } else {
+          // Create new conversation
+          conversation = {
+            id: Date.now().toString(),
+            title,
+            createdAt: now,
+            lastUpdated: now,
+            chatMessages,
+            product,
+            quantity,
+            budget,
+            selectedPriority,
+            negotiationMessages,
+            negotiationResult,
+          }
+
+          set({
+            currentConversationId: conversation.id,
+            savedConversations: [conversation, ...savedConversations],
+          })
+        }
+
+        // Save to Supabase if user is logged in
+        if (userId) {
+          const savedId = await saveNegotiation(conversation, userId)
+          if (savedId && savedId !== conversation.id) {
+            // Update local state with database ID
+            set((state) => ({
+              currentConversationId: savedId,
+              savedConversations: state.savedConversations.map((conv) =>
+                conv.id === conversation.id ? { ...conv, id: savedId } : conv
+              ),
+            }))
+          }
+        }
+      },
 
       loadConversation: (id) =>
         set((state) => {
@@ -213,7 +242,14 @@ export const useNegotiationStore = create<NegotiationStore>()(
           }
         }),
 
-      deleteConversation: (id) =>
+      deleteConversation: async (id) => {
+        // Delete from Supabase if it's a UUID (database ID)
+        const isUUID = id.length === 36 && id.includes('-')
+        if (isUUID) {
+          await deleteNegotiationDb(id)
+        }
+
+        // Delete from local state
         set((state) => ({
           savedConversations: state.savedConversations.filter((conv) => conv.id !== id),
           ...(state.currentConversationId === id
@@ -232,7 +268,16 @@ export const useNegotiationStore = create<NegotiationStore>()(
                 negotiationResult: null,
               }
             : {}),
-        })),
+        }))
+      },
+
+      loadUserNegotiations: async () => {
+        const { userId } = get()
+        if (!userId) return
+
+        const negotiations = await loadNegotiations(userId)
+        set({ savedConversations: negotiations })
+      },
 
       startNewConversation: () =>
         set({

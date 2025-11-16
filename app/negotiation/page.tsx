@@ -47,6 +47,8 @@ export default function NegotiationPage() {
     loadConversation,
     deleteConversation,
     startNewConversation,
+    setUserId,
+    loadUserNegotiations,
     reset,
   } = useNegotiationStore()
 
@@ -63,6 +65,12 @@ export default function NegotiationPage() {
         window.location.href = '/login'
         return
       }
+
+      // Set user ID in store
+      setUserId(user.id)
+
+      // Load user's saved negotiations from Supabase
+      await loadUserNegotiations()
 
       // First try to get from user metadata
       const fullName = user.user_metadata?.full_name
