@@ -55,7 +55,7 @@ export function LandingContent() {
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Link
-                href="/learn-more#get-started"
+                href="/negotiation"
                 className="rounded-md bg-white px-7 py-4 text-base font-medium text-[#080705] shadow-xl transition hover:bg-white/90"
               >
                 Launch negotiation
