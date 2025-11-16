@@ -5,18 +5,18 @@ import Squares from './squares'
 
 export function LandingContent() {
   return (
-    <div className="relative isolate min-h-screen w-full overflow-hidden bg-[#0f2c4a] text-white">
+    <div className="relative isolate min-h-screen w-full overflow-hidden bg-black text-white">
       <Squares
         direction="diagonal"
         speed={0.45}
         squareSize={46}
-        borderColor="rgba(255,255,255,0.08)"
-        hoverFillColor="rgba(255,255,255,0.2)"
-        className="absolute inset-0 opacity-70"
+        borderColor="rgba(255,255,255,0.14)"
+        hoverFillColor="rgba(255,255,255,0.06)"
+        className="absolute inset-0 opacity-90"
       />
 
       <div className="pointer-events-none relative z-10 flex min-h-screen flex-col">
-        <div className="absolute left-0 right-0 top-0 h-[76px] bg-[#0b2239] opacity-90" />
+        <div className="absolute left-0 right-0 top-0 h-[76px] bg-black/80" />
 
         <header className="relative flex items-center justify-between px-8 py-5 lg:px-16">
           <Link
@@ -33,25 +33,16 @@ export function LandingContent() {
             >
               Learn more
             </Link>
-            <Link
-              href="/learn-more#get-started"
-              className="rounded-md bg-white px-5 py-2 text-sm font-semibold text-[#080705] shadow-lg transition hover:bg-white/90"
-            >
-              Start free pilot
-            </Link>
           </div>
         </header>
 
         <main className="relative flex flex-1 items-center justify-center px-8 pb-20 pt-6 lg:px-16">
           <div className="pointer-events-auto mx-auto flex max-w-4xl flex-col items-start gap-8 text-left">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
-              Conversational sustainable shopping
-            </div>
             <h1 className="text-5xl font-light leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-              An AI agent that negotiates for greener, cheaper, or faster buys
+              Welcome <br></br>to the future of shopping
             </h1>
             <p className="max-w-3xl text-lg leading-relaxed text-white/85">
-              Tell ProductScout what you need, pick one priority—speed, lowest carbon, or best price—and we deploy agents that negotiate live, verify claims, and return one transparent recommendation.
+              An AI agent that negotiates for greener, cheaper, or faster buys. Tell ProductScout what you need, pick one priority—speed, lowest carbon, or best price—and we deploy agents that negotiate live, verify claims, and return one transparent recommendation.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Link
