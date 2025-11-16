@@ -91,7 +91,8 @@ export class SingleStoreOrchestrator {
         this.quantity,
         buyerInitialMessage,
         round,
-        'openrouter' // Not used for single store
+        'openrouter', // Not used for single store
+        this.priority
       )
 
       // Generate seller message and send offer update immediately in parallel

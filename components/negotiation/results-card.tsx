@@ -171,33 +171,37 @@ export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlt
               className="mb-6 max-h-96 space-y-3 overflow-hidden"
             >
               <h4 className="text-sm font-semibold text-white">Negotiation History</h4>
-              <div className="max-h-80 space-y-2 overflow-y-auto rounded-lg border border-white/20 bg-white/5 p-4 backdrop-blur-sm">
-                {negotiationMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`rounded-lg border p-3 backdrop-blur-sm ${
-                      msg.role === 'buyer'
-                        ? 'border-white/30 bg-white/10 text-white'
-                        : 'border-white/20 bg-white/5 text-white/90'
-                    }`}
-                  >
-                    <div className="mb-1 flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-white/70">
-                        {msg.role === 'buyer' ? 'Your Agent' : msg.sellerName}
-                      </span>
-                      {msg.model && (
-                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                          msg.role === 'buyer'
-                            ? 'bg-white/20 text-white/60'
-                            : 'bg-black/20 text-white/60'
-                        }`}>
-                          {msg.model}
-                        </span>
-                      )}
+              <div className="max-h-80 space-y-3 overflow-y-auto rounded-lg border border-white/20 bg-white/5 p-4 backdrop-blur-sm">
+                {negotiationMessages.map((msg) => {
+                  const isBuyer = msg.role === 'buyer'
+                  return (
+                    <div key={msg.id} className={`flex ${isBuyer ? 'justify-start' : 'justify-end'}`}>
+                      <div
+                        className={`max-w-[85%] rounded-2xl border p-3 shadow-sm backdrop-blur-sm ${
+                          isBuyer
+                            ? 'border-indigo-400/40 bg-indigo-500/10 text-white'
+                            : 'border-white/15 bg-white/5 text-white/90'
+                        }`}
+                      >
+                        <div className={`mb-1 flex items-center ${isBuyer ? 'justify-start' : 'justify-end'} gap-2`}>
+                          <span className="text-xs font-semibold text-white/70">
+                            {isBuyer ? 'Your Agent' : msg.sellerName || 'Seller'}
+                          </span>
+                          {msg.model && (
+                            <span
+                              className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                                isBuyer ? 'bg-white/20 text-white/70' : 'bg-black/10 text-white/60'
+                              }`}
+                            >
+                              {msg.model}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm leading-relaxed">{msg.content}</p>
+                      </div>
                     </div>
-                    <p className="text-sm">{msg.content}</p>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </motion.div>
           )}

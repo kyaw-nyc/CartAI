@@ -94,7 +94,8 @@ export class NegotiationOrchestrator {
         this.quantity,
         initialRequest,
         this.currentRound,
-        this.provider
+        this.provider,
+        this.priority
       )
 
       const response = await generateSellerResponse(
@@ -155,7 +156,8 @@ export class NegotiationOrchestrator {
           this.quantity,
           buyerResponse,
           this.currentRound,
-          this.provider
+          this.provider,
+          this.priority
         )
 
         const response = await generateSellerResponse(
@@ -268,12 +270,31 @@ Be specific about trade-offs. Keep it under 80 words.`
     // Get latest offers from each seller
     const latestOffers = this.getLatestOffers()
 
+    // Add near-best randomness so close offers don't always pick the same seller
+    const pickFromNearBest = <T extends Offer>(offers: T[], scoreFn: (offer: T) => number, tolerance: (best: number, value: number) => boolean): T => {
+      const bestScore = Math.min(...offers.map(scoreFn))
+      const nearBest = offers.filter((offer) => tolerance(bestScore, scoreFn(offer)))
+      return nearBest[Math.floor(Math.random() * nearBest.length)]
+    }
+
     if (this.priority === 'speed') {
-      return latestOffers.reduce((best, current) => (current.deliveryDays < best.deliveryDays ? current : best))
+      return pickFromNearBest(
+        latestOffers,
+        (offer) => offer.deliveryDays,
+        (best, value) => value <= best + 1 // within 1 day counts as "near"
+      )
     } else if (this.priority === 'carbon') {
-      return latestOffers.reduce((best, current) => (current.carbonFootprint < best.carbonFootprint ? current : best))
+      return pickFromNearBest(
+        latestOffers,
+        (offer) => offer.carbonFootprint,
+        (best, value) => value <= best * 1.05 // within 5% footprint counts as "near"
+      )
     } else {
-      return latestOffers.reduce((best, current) => (current.price < best.price ? current : best))
+      return pickFromNearBest(
+        latestOffers,
+        (offer) => offer.price,
+        (best, value) => value <= best * 1.04 // within 4% price counts as "near"
+      )
     }
   }
 

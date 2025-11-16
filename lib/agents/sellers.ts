@@ -3,6 +3,7 @@ import { callOpenAI, OpenAIModel } from '../api/openai-direct'
 import { SellerProfile } from '@/types/agent'
 import { Offer } from '@/types/negotiation'
 import { AIProvider } from '../api/ai-providers'
+import { Priority } from '@/types/product'
 
 /**
  * Predefined seller profiles matching real Manhattan stores
@@ -74,6 +75,27 @@ export const SELLER_PROFILES: SellerProfile[] = [
   },
 ]
 
+type SellerModelTuning = {
+  temperature: number
+  maxTokens: number
+}
+
+// Per-seller model tuning so responses feel more distinct (and less likely to converge)
+const SELLER_MODEL_TUNING: Record<string, SellerModelTuning> = {
+  store_hm: { temperature: 0.55, maxTokens: 90 }, // steadier, price-conscious
+  store_zara: { temperature: 0.72, maxTokens: 110 }, // more creative, speed-focused
+  store_hugo: { temperature: 0.78, maxTokens: 120 }, // premium tone with extra room to elaborate
+}
+
+function getSellerModelTuning(sellerId: string): SellerModelTuning {
+  const tuning = SELLER_MODEL_TUNING[sellerId] ?? { temperature: 0.65, maxTokens: 95 }
+  const jitter = (Math.random() - 0.5) * 0.06 // ±0.03 to add subtle run-to-run variation
+  return {
+    temperature: Math.max(0.2, Math.min(1.2, tuning.temperature + jitter)),
+    maxTokens: tuning.maxTokens,
+  }
+}
+
 /**
  * Generate an offer from a seller based on their profile and negotiation context
  */
@@ -83,7 +105,8 @@ export async function generateSellerOffer(
   quantity: number,
   buyerMessage: string,
   roundNumber: number,
-  provider: AIProvider
+  provider: AIProvider,
+  priority: Priority
 ): Promise<Offer> {
   const providerAdjustments: Record<AIProvider, { priceMultiplier: number; carbonMultiplier: number; deliveryShift: number }> = {
     openrouter: { priceMultiplier: 1, carbonMultiplier: 1, deliveryShift: 0 },
@@ -124,8 +147,18 @@ export async function generateSellerOffer(
   }
 
   const basePrice = Math.max(profile.inventory.basePrice * priceFactor, profile.inventory.basePrice * 0.75)
-  const priceJitter = 0.97 + Math.random() * 0.06 // +/-3% jitter for variety
-  const price = basePrice * variant.priceMultiplier * priceJitter
+  const priceJitter = 0.94 + Math.random() * 0.12 // +/-6% jitter for variety
+
+  const priceSpecialization =
+    priority === 'price'
+      ? profile.personality.pricePoint === 'budget'
+        ? 0.9
+        : profile.personality.pricePoint === 'premium'
+          ? 1.08
+          : 1
+      : 1
+
+  const price = basePrice * variant.priceMultiplier * priceJitter * priceSpecialization
 
   // Adjust delivery for urgency, but sellers might refuse fast delivery
   let deliveryDays = profile.inventory.deliveryDays + variant.deliveryShift
@@ -140,8 +173,28 @@ export async function generateSellerOffer(
     }
   }
 
-  const carbonJitter = 0.98 + Math.random() * 0.04 // +/-2% jitter
-  const carbon = profile.inventory.carbonFootprint * variant.carbonMultiplier * carbonJitter
+  // Speed priority: more chance to speed up (or refuse) based on flexibility
+  if (priority === 'speed') {
+    if (Math.random() < 0.5 + (profile.personality.negotiationFlexibility === 'high' ? 0.2 : 0)) {
+      deliveryDays = Math.max(1, deliveryDays - 1)
+    } else if (Math.random() < 0.2) {
+      deliveryDays = Math.max(deliveryDays, profile.inventory.deliveryDays + 1)
+    }
+  }
+
+  const carbonJitter = 0.94 + Math.random() * 0.12 // +/-6% jitter
+  const carbonSpecialization =
+    priority === 'carbon'
+      ? profile.personality.sustainabilityFocus === 'very_high'
+        ? 0.86
+        : profile.personality.sustainabilityFocus === 'high'
+          ? 0.9
+          : profile.personality.sustainabilityFocus === 'medium'
+            ? 1
+            : 1.08
+      : 1
+
+  const carbon = profile.inventory.carbonFootprint * variant.carbonMultiplier * carbonJitter * carbonSpecialization
 
   return {
     id: `offer_${profile.id}_${Date.now()}`,
@@ -186,14 +239,16 @@ Respond as this seller in 1-2 sentences. You are a REAL business that needs to m
 - Stay in character and be professional
 Keep under 50 words. Sometimes refuse to budge on price if needed.`
 
+  const { temperature, maxTokens } = getSellerModelTuning(profile.id)
+
   // Use direct OpenAI for GPT models, OpenRouter for others
   const isDirectOpenAI = !model.includes('/')
   const response = isDirectOpenAI
-    ? await callOpenAI(prompt, { model: model as OpenAIModel, temperature: 0.6, maxTokens: 80 })
+    ? await callOpenAI(prompt, { model: model as OpenAIModel, temperature, maxTokens })
     : await callOpenRouter(prompt, {
         model,
-        temperature: 0.6,
-        maxTokens: 80,
+        temperature,
+        maxTokens,
         fallbackModel: OPENROUTER_MODELS.GPT4O_MINI,
       })
 
