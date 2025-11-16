@@ -134,5 +134,5 @@ export default function Squares({
     }
   }, [direction, speed, borderColor, hoverFillColor, squareSize])
 
-  return <canvas ref={canvasRef} className={`h-full w-full ${className ?? ''}`} />
+  return <canvas ref={canvasRef} className={`h-full w-full ${className ?? ''}`} style={{ display: 'block' }} />
 }
