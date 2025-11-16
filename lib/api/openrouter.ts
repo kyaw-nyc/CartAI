@@ -56,7 +56,8 @@ export const OPENROUTER_MODELS = {
   NOUS_HERMES: 'nousresearch/nous-hermes-2-mixtral-8x7b-dpo', // Very cheap
 } as const
 
-export type OpenRouterModel = typeof OPENROUTER_MODELS[keyof typeof OPENROUTER_MODELS]
+// Allow any OpenRouter model string (extends beyond the curated list above)
+export type OpenRouterModel = string
 
 export async function callOpenRouter(
   prompt: string,
