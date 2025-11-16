@@ -11,6 +11,7 @@ export function BasicAuthForm({ defaultMode = 'login', className }: { defaultMod
   const [mode, setMode] = useState<Mode>(defaultMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [fullName, setFullName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -26,6 +27,11 @@ export function BasicAuthForm({ defaultMode = 'login', className }: { defaultMod
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              full_name: fullName,
+            },
+          },
         })
         if (signUpError) throw signUpError
       }
@@ -63,6 +69,22 @@ export function BasicAuthForm({ defaultMode = 'login', className }: { defaultMod
       {error && <p className="mb-4 rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-200">{error}</p>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {mode === 'signup' && (
+          <div className="space-y-1">
+            <label className="text-sm text-white/80" htmlFor="fullName">
+              Full Name
+            </label>
+            <input
+              id="fullName"
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              disabled={isLoading}
+              className="w-full rounded-md border border-white/20 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/40 focus:outline-none"
+            />
+          </div>
+        )}
         <div className="space-y-1">
           <label className="text-sm text-white/80" htmlFor="email">
             Email

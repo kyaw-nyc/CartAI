@@ -13,6 +13,7 @@ import { Priority } from '@/types/product'
 import { ChatMessage } from '@/types/negotiation'
 import { NegotiationUpdate } from '@/lib/agents/orchestrator'
 import { formatDistanceToNow } from 'date-fns'
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
 export default function NegotiationPage() {
   const [inputValue, setInputValue] = useState('')
@@ -48,7 +49,34 @@ export default function NegotiationPage() {
     reset,
   } = useNegotiationStore()
 
-  const [userName] = useState('User')
+  const [userName, setUserName] = useState('User')
+  const supabase = createSupabaseBrowserClient()
+
+  // Fetch user name on mount
+  useEffect(() => {
+    const fetchUserName = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        // First try to get from user metadata
+        const fullName = user.user_metadata?.full_name
+        if (fullName) {
+          setUserName(fullName)
+        } else {
+          // Fallback to profiles table
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single()
+
+          if (profile?.full_name) {
+            setUserName(profile.full_name)
+          }
+        }
+      }
+    }
+    fetchUserName()
+  }, [supabase])
 
   useEffect(() => {
     if (showPrioritySelector || isNegotiating || negotiationResult) return
