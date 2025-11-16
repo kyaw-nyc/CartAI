@@ -23,15 +23,15 @@ export function LandingContent() {
             href="/"
             className="pointer-events-auto flex items-center gap-3 text-base font-semibold tracking-tight text-white transition hover:text-white/80"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-lg font-bold">PS</div>
-            ProductScout
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-lg font-bold">CA</div>
+            CartAI
           </Link>
           <div className="pointer-events-auto flex items-center gap-3">
             <Link
-              href="/learn-more"
+              href="/login"
               className="rounded-md border border-white/30 px-4 py-2 text-sm font-semibold text-white transition hover:border-white hover:bg-white hover:text-[#080705]"
             >
-              Learn more
+              Log in
             </Link>
           </div>
         </header>
@@ -42,14 +42,14 @@ export function LandingContent() {
               Welcome <br></br>to the future of shopping
             </h1>
             <p className="max-w-3xl text-lg leading-relaxed text-white/85">
-              An AI agent that negotiates for greener, cheaper, or faster buys. Tell ProductScout what you need, pick one priority—speed, lowest carbon, or best price—and we deploy agents that negotiate live, verify claims, and return one transparent recommendation.
+              An AI agent that negotiates for greener, cheaper, or faster buys. Tell CartAI what you need, pick one priority—speed, lowest carbon, or best price—and we deploy agents that negotiate live, verify claims, and return one transparent recommendation.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Link
-                href="/negotiation"
+                href="/signup"
                 className="rounded-md bg-white px-7 py-4 text-base font-medium text-[#080705] shadow-xl transition hover:bg-white/90"
               >
-                Launch negotiation
+                Sign up
               </Link>
               <Link
                 href="/learn-more"

@@ -25,7 +25,7 @@ export async function handleConversation(
     .map((msg) => `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
     .join('\n')
 
-  const prompt = `You are ProductScout, a friendly AI shopping assistant helping users find sustainable products.
+  const prompt = `You are CartAI, a friendly AI shopping assistant helping users find sustainable products.
 
 Conversation History:
 ${historyText}

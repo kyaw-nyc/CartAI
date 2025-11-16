@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Send, HelpCircle, MessageSquare, Plus, Trash2 } from 'lucide-react'
+import { SidebarFooter } from './_sidebar-footer'
 import Squares from '@/components/landing/squares'
 import { PrioritySelector } from '@/components/negotiation/priority-selector'
 import { NegotiationView } from '@/components/negotiation/negotiation-view'
@@ -205,12 +206,12 @@ export default function NegotiationPage() {
       {/* Sidebar */}
       <aside className="relative z-10 flex h-full w-64 min-w-[16rem] max-w-[16rem] shrink-0 flex-col overflow-y-auto border-r border-white/10 bg-[#0d1f35]/80 backdrop-blur-sm">
         {/* Logo */}
-        <div className="flex items-center gap-2 border-b border-white/10 px-4 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-bold">
-            PS
+          <div className="flex items-center gap-2 border-b border-white/10 px-4 py-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-bold">
+              CA
+            </div>
+            <span className="text-base font-semibold">CartAI</span>
           </div>
-          <span className="text-base font-semibold">ProductScout</span>
-        </div>
 
         {/* New Chat Button */}
         <div className="border-b border-white/10 p-3">
@@ -268,14 +269,7 @@ export default function NegotiationPage() {
         </div>
 
         {/* Bottom Actions */}
-        <div className="space-y-2 border-t border-white/10 p-4">
-          <Link
-            href="/"
-            className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-medium text-white/60 transition hover:text-white"
-          >
-            <span>← Back to Home</span>
-          </Link>
-        </div>
+        <SidebarFooter />
       </aside>
 
       {/* Main Content */}

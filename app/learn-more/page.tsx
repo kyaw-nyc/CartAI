@@ -3,36 +3,42 @@ import Squares from '@/components/landing/squares'
 
 export default function LearnMorePage() {
   return (
-    <div className="relative isolate min-h-screen w-full bg-[#0a1a2e] text-white">
+    <div className="relative isolate min-h-screen w-full overflow-hidden bg-black text-white">
       <Squares
         direction="diagonal"
         speed={0.45}
         squareSize={46}
-        borderColor="rgba(255,255,255,0.06)"
-        hoverFillColor="rgba(255,255,255,0.08)"
-        className="pointer-events-none fixed inset-0 opacity-30"
+        borderColor="rgba(255,255,255,0.14)"
+        hoverFillColor="rgba(255,255,255,0.06)"
+        className="pointer-events-none absolute inset-0 opacity-90"
       />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl flex-col gap-10 px-6 py-10 lg:px-10">
-        <header className="flex items-center justify-between rounded-xl border border-white/10 bg-[#0b2239] px-4 py-4">
-          <Link href="/" className="flex items-center gap-3 text-base font-semibold text-white">
-            <span className="leading-none">ProductScout</span>
+      <div className="pointer-events-none relative z-10 flex min-h-screen flex-col">
+        <div className="absolute left-0 right-0 top-0 h-[76px] bg-black/80" />
+
+        <header className="relative flex items-center justify-between px-8 py-5 lg:px-16">
+          <Link
+            href="/"
+            className="pointer-events-auto flex items-center gap-3 text-base font-semibold tracking-tight text-white transition hover:text-white/80"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-lg font-bold">CA</div>
+            CartAI
           </Link>
-          <div className="flex items-center gap-3 text-sm">
-            <Link href="/" className="rounded-md border border-white/25 px-3 py-2 text-white">
-              Back to home
-            </Link>
-            <Link href="#get-started" className="rounded-md bg-white px-3 py-2 text-[#080705] font-semibold">
-              Get started
+          <div className="pointer-events-auto flex items-center gap-3">
+            <Link
+              href="/login"
+              className="rounded-md border border-white/30 px-4 py-2 text-sm font-semibold text-white transition hover:border-white hover:bg-white hover:text-[#080705]"
+            >
+              Log in
             </Link>
           </div>
         </header>
 
-        <main className="space-y-8">
+        <main className="relative mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 pb-12 pt-6 lg:px-10">
           <section className="space-y-3">
             <p className="text-xs uppercase tracking-[0.2em] text-white/70">Conversational sustainable shopping</p>
             <h1 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
-              How ProductScout negotiates for speed, carbon, or price
+              How CartAI negotiates for speed, carbon, or price
             </h1>
             <p className="max-w-3xl text-base text-white/80">
               Give us your request, pick a single priority, and our buyer and seller agents negotiate live. We verify claims across models and return one transparent recommendation with clear trade-offs.
@@ -90,7 +96,7 @@ export default function LearnMorePage() {
               Drop in your catalog and basic policies. We align tone and guardrails, then run a short pilot. No fancy setup required.
             </p>
             <p className="text-sm text-white/75">
-              Email hello@productscout.ai to kick off a pilot or ask questions. We’ll respond with next steps.
+              Email hello@cartai.ai to kick off a pilot or ask questions. We’ll respond with next steps.
             </p>
           </section>
         </main>
