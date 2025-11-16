@@ -54,6 +54,10 @@ interface NegotiationStore {
   showPrioritySelector: boolean
   setShowPrioritySelector: (show: boolean) => void
 
+  // Single-store negotiation
+  selectedStoreId: string | null
+  setSelectedStoreId: (storeId: string | null) => void
+
   // Active provider
   activeProvider: AIProvider
   setActiveProvider: (provider: AIProvider) => void
@@ -91,12 +95,16 @@ export const useNegotiationStore = create<NegotiationStore>()(
       budget: null,
       selectedPriority: null,
       showPrioritySelector: false,
+      selectedStoreId: null,
       activeProvider: 'openrouter' as AIProvider,
       providerStates: createInitialProviderStates(),
       savedConversations: [],
 
       // Set user ID
       setUserId: (userId) => set({ userId }),
+
+      // Set selected store
+      setSelectedStoreId: (storeId) => set({ selectedStoreId: storeId }),
 
       // Set active provider
       setActiveProvider: (provider) => set({ activeProvider: provider }),

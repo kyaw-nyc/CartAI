@@ -9,6 +9,7 @@ export interface AgentMessage {
   timestamp: Date
   sellerId?: string
   sellerName?: string
+  model?: string
   metadata?: Record<string, unknown>
 }
 

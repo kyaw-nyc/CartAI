@@ -5,70 +5,71 @@ import { Offer } from '@/types/negotiation'
 import { AIProvider } from '../api/ai-providers'
 
 /**
- * Predefined seller profiles with different characteristics
+ * Predefined seller profiles matching real Manhattan stores
+ * Each store uses a different AI model
  */
 export const SELLER_PROFILES: SellerProfile[] = [
   {
-    id: 'seller_eco_premium',
-    name: 'EcoSupply',
-    model: 'gpt-4o',
+    id: 'store_hm',
+    name: 'H&M',
+    model: 'gpt-4o', // Your OpenAI API
     personality: {
-      sustainabilityFocus: 'very_high',
-      pricePoint: 'premium',
+      sustainabilityFocus: 'high',
+      pricePoint: 'mid',
       negotiationFlexibility: 'medium',
     },
     inventory: {
-      basePrice: 120,
-      carbonFootprint: 12,
-      deliveryDays: 5,
-      certifications: ['B-Corp', 'Carbon-Neutral', 'Fair Trade'],
+      basePrice: 95,
+      carbonFootprint: 15,
+      deliveryDays: 3,
+      certifications: ['Conscious Choice', 'Organic Cotton'],
     },
     tactics: [
-      'Emphasize quality and certifications',
-      'Provide detailed carbon breakdowns',
-      'Willing to slightly reduce price for bulk orders',
+      'Emphasize sustainable fashion collections',
+      'Offer bulk discounts for larger orders',
+      'Highlight fast fashion alternatives',
     ],
   },
   {
-    id: 'seller_fast_trader',
-    name: 'QuickShip',
-    model: 'gpt-4o',
+    id: 'store_zara',
+    name: 'Zara',
+    model: 'anthropic/claude-3.5-sonnet', // OpenRouter Anthropic
     personality: {
       sustainabilityFocus: 'medium',
       pricePoint: 'mid',
-      negotiationFlexibility: 'very_high',
+      negotiationFlexibility: 'low',
     },
     inventory: {
-      basePrice: 95,
+      basePrice: 110,
       carbonFootprint: 18,
-      deliveryDays: 1,
-      certifications: ['ISO-14001'],
+      deliveryDays: 2,
+      certifications: ['Join Life'],
     },
     tactics: [
-      'Lead with speed and convenience',
-      'Aggressive price matching',
-      'Offer tiered delivery options',
+      'Lead with trend-focused contemporary designs',
+      'Emphasize speed and style',
+      'Maintain premium positioning',
     ],
   },
   {
-    id: 'seller_budget',
-    name: 'ValueGreen',
-    model: 'gpt-4o',
+    id: 'store_hugo',
+    name: 'Hugo Boss',
+    model: 'deepseek/deepseek-chat', // OpenRouter DeepSeek (Sherlock alternative)
     personality: {
-      sustainabilityFocus: 'low',
-      pricePoint: 'budget',
-      negotiationFlexibility: 'very_high',
+      sustainabilityFocus: 'medium',
+      pricePoint: 'premium',
+      negotiationFlexibility: 'low',
     },
     inventory: {
-      basePrice: 75,
-      carbonFootprint: 22,
-      deliveryDays: 10,
-      certifications: [],
+      basePrice: 150,
+      carbonFootprint: 12,
+      deliveryDays: 5,
+      certifications: ['Responsible Wool', 'Sustainable Apparel Coalition'],
     },
     tactics: [
-      'Undercut all competitors on price',
-      'Bulk discount offers',
-      'Fast to respond and adapt',
+      'Emphasize premium quality and craftsmanship',
+      'Highlight long-lasting durability',
+      'Position as investment pieces',
     ],
   },
 ]

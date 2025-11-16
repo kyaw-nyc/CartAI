@@ -51,13 +51,23 @@ export function NegotiationView({ messages, currentBest, progress }: Negotiation
                   }`}
                 >
                   {message.role === 'seller' && message.sellerName && (
-                    <div className="mb-1 text-xs font-semibold opacity-70">
-                      {message.sellerName}
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold opacity-70">{message.sellerName}</span>
+                      {message.model && (
+                        <span className="rounded bg-black/20 px-1.5 py-0.5 text-[10px] font-medium opacity-60">
+                          {message.model}
+                        </span>
+                      )}
                     </div>
                   )}
                   {message.role === 'buyer' && (
-                    <div className="mb-1 text-xs font-semibold opacity-70">
-                      Your Agent
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold opacity-70">Your Agent</span>
+                      {message.model && (
+                        <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-medium opacity-60">
+                          {message.model}
+                        </span>
+                      )}
                     </div>
                   )}
                   <p className="text-sm">{message.content}</p>

@@ -6,6 +6,7 @@ import { Send, HelpCircle, MessageSquare, Plus, Trash2 } from 'lucide-react'
 import { SidebarFooter } from './_sidebar-footer'
 import Squares from '@/components/landing/squares'
 import { PrioritySelector } from '@/components/negotiation/priority-selector'
+import { PrioritySlider, PriorityWeights } from '@/components/negotiation/priority-slider'
 import { NegotiationView } from '@/components/negotiation/negotiation-view'
 import { ResultsCard } from '@/components/negotiation/results-card'
 import { ProviderTabs } from '@/components/negotiation/provider-tabs'
@@ -36,6 +37,8 @@ export default function NegotiationPage() {
     setSelectedPriority,
     showPrioritySelector,
     setShowPrioritySelector,
+    selectedStoreId,
+    setSelectedStoreId,
     activeProvider,
     setActiveProvider,
     providerStates,
@@ -49,6 +52,7 @@ export default function NegotiationPage() {
     startNewConversation,
     setUserId,
     loadUserNegotiations,
+    saveCurrentConversation,
     reset,
   } = useNegotiationStore()
 
@@ -159,6 +163,9 @@ export default function NegotiationPage() {
       if (data.readyForPriority) {
         setShowPrioritySelector(true)
       }
+
+      // Save conversation after each message
+      await saveCurrentConversation()
     } catch (error) {
       console.error('Chat error:', error)
       const errorMessage: ChatMessage = {
@@ -237,21 +244,105 @@ export default function NegotiationPage() {
     }
   }
 
-  const handlePrioritySelect = async (priority: Priority) => {
+  // Run single-store negotiation
+  const runSingleStoreNegotiation = async (priority: Priority, storeId: string) => {
+    try {
+      // Map storeId to buyer model
+      const buyerModelMap: Record<string, string> = {
+        store_hm: 'gpt-4o-mini',
+        store_zara: 'anthropic/claude-3-haiku',
+        store_hugo: 'deepseek/deepseek-chat',
+      }
+
+      const buyerModel = buyerModelMap[storeId] || 'gpt-4o-mini'
+
+      const response = await fetch('/api/negotiate-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product: product || 'product',
+          quantity: quantity || 1,
+          priority,
+          budget: budget || 100,
+          userName: userName,
+          storeId,
+          buyerModel,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Single-store negotiation failed for ${storeId}`)
+      }
+
+      // Handle Server-Sent Events
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) {
+        throw new Error('No response stream')
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.slice(6)) as NegotiationUpdate
+
+            if (data.type === 'message' && data.data.message) {
+              console.log(`[${storeId}] New message:`, data.data.message)
+              addNegotiationMessage(data.data.message, 'openrouter')
+            } else if (data.type === 'metric' && data.data.currentBest && data.data.progress !== undefined) {
+              console.log(`[${storeId}] Metric update:`, data.data.progress, '%')
+              updateCurrentBest(data.data.currentBest, data.data.progress, 'openrouter')
+            } else if (data.type === 'complete' && data.data.result) {
+              console.log(`[${storeId}] Negotiation complete!`, data.data.result)
+              setNegotiationResult(data.data.result, 'openrouter')
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Single-store negotiation error for ${storeId}:`, error)
+    }
+  }
+
+  const handlePrioritySelect = async (weights: PriorityWeights) => {
     const safeProduct = product || 'product'
     const safeQuantity = quantity || 1
     const safeBudget = budget || 100
     // Ensure requirements are populated so negotiation API has values
     setRequirements(safeProduct, safeQuantity, safeBudget)
 
-    setSelectedPriority(priority)
+    // Determine dominant priority for backward compatibility
+    const dominant = weights.speed > weights.carbon && weights.speed > weights.price
+      ? 'speed'
+      : weights.carbon > weights.price
+      ? 'carbon'
+      : 'price'
 
-    // Start all three negotiations in parallel
-    const providers: AIProvider[] = ['openrouter', 'anthropic', 'gemini']
-    providers.forEach((provider) => startNegotiation(provider))
+    setSelectedPriority(dominant)
 
-    // Run all negotiations in parallel
-    await Promise.all(providers.map((provider) => runNegotiationForProvider(priority, provider)))
+    console.log('Priority weights:', weights, 'Dominant:', dominant)
+
+    // Check if this is a single-store negotiation from the map
+    if (selectedStoreId) {
+      console.log(`Starting single-store negotiation with: ${selectedStoreId}`)
+      startNegotiation('openrouter')
+      await runSingleStoreNegotiation(dominant, selectedStoreId)
+      // Clear the selected store after negotiation
+      setSelectedStoreId(null)
+    } else {
+      // Original multi-provider negotiation
+      console.log('Starting multi-provider negotiation')
+      const providers: AIProvider[] = ['openrouter', 'anthropic', 'gemini']
+      providers.forEach((provider) => startNegotiation(provider))
+      await Promise.all(providers.map((provider) => runNegotiationForProvider(dominant, provider)))
+    }
   }
 
   const getGreeting = () => {
@@ -407,6 +498,11 @@ export default function NegotiationPage() {
                   </span>
                 )}
               </h2>
+              {selectedStoreId && (
+                <p className="text-sm text-white/60 mt-1">
+                  Negotiating with: {selectedStoreId === 'store_hm' ? 'H&M' : selectedStoreId === 'store_zara' ? 'Zara' : 'Hugo Boss'}
+                </p>
+              )}
             </div>
             <NegotiationView
               messages={negotiationMessages}
@@ -415,9 +511,9 @@ export default function NegotiationPage() {
             />
           </div>
         ) : showPrioritySelector ? (
-          /* Priority Selection */
-          <div className="flex flex-1 items-center justify-center">
-            <PrioritySelector onSelect={handlePrioritySelect} />
+          /* Priority Selection with Sliders */
+          <div className="flex flex-1 items-center justify-center p-8">
+            <PrioritySlider onSelect={handlePrioritySelect} />
           </div>
         ) : chatMessages.length === 0 ? (
           /* Empty State - Greeting */

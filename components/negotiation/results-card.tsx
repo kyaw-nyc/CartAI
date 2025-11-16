@@ -180,8 +180,19 @@ export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlt
                         : 'border-white/20 bg-white/5 text-white/90'
                     }`}
                   >
-                    <div className="mb-1 text-xs font-semibold text-white/70">
-                      {msg.role === 'buyer' ? 'Your Agent' : msg.sellerName}
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-white/70">
+                        {msg.role === 'buyer' ? 'Your Agent' : msg.sellerName}
+                      </span>
+                      {msg.model && (
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                          msg.role === 'buyer'
+                            ? 'bg-white/20 text-white/60'
+                            : 'bg-black/20 text-white/60'
+                        }`}>
+                          {msg.model}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm">{msg.content}</p>
                   </div>
