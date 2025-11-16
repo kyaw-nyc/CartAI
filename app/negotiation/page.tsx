@@ -8,12 +8,14 @@ import Squares from '@/components/landing/squares'
 import { PrioritySelector } from '@/components/negotiation/priority-selector'
 import { NegotiationView } from '@/components/negotiation/negotiation-view'
 import { ResultsCard } from '@/components/negotiation/results-card'
+import { ProviderTabs } from '@/components/negotiation/provider-tabs'
 import { useNegotiationStore } from '@/lib/store/negotiation'
 import { Priority } from '@/types/product'
 import { ChatMessage } from '@/types/negotiation'
 import { NegotiationUpdate } from '@/lib/agents/orchestrator'
 import { formatDistanceToNow } from 'date-fns'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { AIProvider } from '@/lib/api/ai-providers'
 
 export default function NegotiationPage() {
   const [inputValue, setInputValue] = useState('')
@@ -34,14 +36,12 @@ export default function NegotiationPage() {
     setSelectedPriority,
     showPrioritySelector,
     setShowPrioritySelector,
-    isNegotiating,
-    negotiationMessages,
-    currentBestOffer,
-    negotiationProgress,
+    activeProvider,
+    setActiveProvider,
+    providerStates,
     addNegotiationMessage,
     updateCurrentBest,
     startNegotiation,
-    negotiationResult,
     setNegotiationResult,
     savedConversations,
     loadConversation,
@@ -51,6 +51,13 @@ export default function NegotiationPage() {
     loadUserNegotiations,
     reset,
   } = useNegotiationStore()
+
+  const activeProviderState = providerStates[activeProvider]
+  const negotiationMessages = activeProviderState?.messages ?? []
+  const currentBestOffer = activeProviderState?.currentBestOffer ?? null
+  const negotiationProgress = activeProviderState?.progress ?? 0
+  const negotiationResult = activeProviderState?.result ?? null
+  const isNegotiating = activeProviderState?.isNegotiating ?? false
 
   const [userName, setUserName] = useState('User')
   const supabase = createSupabaseBrowserClient()
@@ -173,11 +180,8 @@ export default function NegotiationPage() {
     }
   }
 
-  const handlePrioritySelect = async (priority: Priority) => {
-    setSelectedPriority(priority)
-    startNegotiation()
-
-    // Start negotiation via API
+  // Run negotiation for a specific provider
+  const runNegotiationForProvider = async (priority: Priority, provider: AIProvider) => {
     try {
       const response = await fetch('/api/negotiate', {
         method: 'POST',
@@ -188,11 +192,12 @@ export default function NegotiationPage() {
           priority,
           budget: budget || 100,
           userName: userName,
+          provider,
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Negotiation failed')
+        throw new Error(`Negotiation failed for ${provider}`)
       }
 
       // Handle Server-Sent Events
@@ -215,18 +220,38 @@ export default function NegotiationPage() {
             const data = JSON.parse(line.slice(6)) as NegotiationUpdate
 
             if (data.type === 'message' && data.data.message) {
-              addNegotiationMessage(data.data.message)
+              console.log(`[${provider}] New message:`, data.data.message)
+              addNegotiationMessage(data.data.message, provider)
             } else if (data.type === 'metric' && data.data.currentBest && data.data.progress !== undefined) {
-              updateCurrentBest(data.data.currentBest, data.data.progress)
+              console.log(`[${provider}] Metric update:`, data.data.progress, '%')
+              updateCurrentBest(data.data.currentBest, data.data.progress, provider)
             } else if (data.type === 'complete' && data.data.result) {
-              setNegotiationResult(data.data.result)
+              console.log(`[${provider}] Negotiation complete!`, data.data.result)
+              setNegotiationResult(data.data.result, provider)
             }
           }
         }
       }
     } catch (error) {
-      console.error('Negotiation error:', error)
+      console.error(`Negotiation error for ${provider}:`, error)
     }
+  }
+
+  const handlePrioritySelect = async (priority: Priority) => {
+    const safeProduct = product || 'product'
+    const safeQuantity = quantity || 1
+    const safeBudget = budget || 100
+    // Ensure requirements are populated so negotiation API has values
+    setRequirements(safeProduct, safeQuantity, safeBudget)
+
+    setSelectedPriority(priority)
+
+    // Start all three negotiations in parallel
+    const providers: AIProvider[] = ['openrouter', 'anthropic', 'gemini']
+    providers.forEach((provider) => startNegotiation(provider))
+
+    // Run all negotiations in parallel
+    await Promise.all(providers.map((provider) => runNegotiationForProvider(priority, provider)))
   }
 
   const getGreeting = () => {
@@ -331,6 +356,22 @@ export default function NegotiationPage() {
 
       {/* Main Content */}
       <main className="relative z-10 flex h-full flex-1 flex-col overflow-hidden">
+        {/* Provider Tabs - Show when any provider is negotiating or has results */}
+        {Object.values(providerStates).some((state) => state.isNegotiating || state.result) && (
+          <>
+            <ProviderTabs activeProvider={activeProvider} onProviderChange={setActiveProvider} />
+            {/* Debug Info */}
+            <div className="border-b border-white/10 bg-black/40 px-6 py-2 text-xs text-white/40">
+              {Object.entries(providerStates).map(([key, state]) => (
+                <span key={key} className="mr-4">
+                  {key}: {state.isNegotiating ? '🔄' : state.result ? '✅' : '⏸️'}
+                  {state.messages.length} msgs, {state.progress}%
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+
         {negotiationResult ? (
           /* Results View */
           <div className="flex flex-1 overflow-y-auto p-8">

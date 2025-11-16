@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS negotiations (
   chat_messages JSONB DEFAULT '[]'::jsonb,
   negotiation_messages JSONB DEFAULT '[]'::jsonb,
   negotiation_result JSONB,
+  provider_states JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

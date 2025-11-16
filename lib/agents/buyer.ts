@@ -1,4 +1,5 @@
-import { callOpenRouter, OPENROUTER_MODELS } from '../api/openrouter'
+import { callOpenRouter, OPENROUTER_MODELS, OpenRouterModel } from '../api/openrouter'
+import { callOpenAI, OpenAIModel } from '../api/openai-direct'
 import { BuyerAgentConfig } from '@/types/agent'
 import { Priority } from '@/types/product'
 import { Offer } from '@/types/negotiation'
@@ -46,7 +47,8 @@ export async function generateBuyerRequest(
   quantity: number,
   priority: Priority,
   config: BuyerAgentConfig,
-  userName: string = 'Customer'
+  userName: string = 'Customer',
+  model: OpenRouterModel = OPENROUTER_MODELS.GPT4O_MINI
 ): Promise<string> {
   const priorityDescriptions = {
     speed: 'fastest possible delivery',
@@ -67,11 +69,15 @@ Start with "Dear Seller," and sign off with "Best regards, ${userName}".
 Emphasize your priority (${priority}) and be specific about requirements.
 Keep it under 60 words total.`
 
-  // Buyer uses GPT-4o Mini (cheap but strategic)
-  const response = await callOpenRouter(prompt, {
-    model: OPENROUTER_MODELS.GPT4O_MINI,
-    temperature: 0.8,
-  })
+  // Use direct OpenAI for GPT models, OpenRouter for others
+  const isDirectOpenAI = !model.includes('/')
+  const response = isDirectOpenAI
+    ? await callOpenAI(prompt, { model: model as OpenAIModel, temperature: 0.8 })
+    : await callOpenRouter(prompt, {
+        model,
+        temperature: 0.8,
+        fallbackModel: OPENROUTER_MODELS.GPT4O_MINI,
+      })
 
   if (!response.success || !response.content) {
     // Fallback based on priority
@@ -97,7 +103,8 @@ export async function generateBuyerResponse(
   config: BuyerAgentConfig,
   offers: Offer[],
   roundNumber: number,
-  userName: string = 'Customer'
+  userName: string = 'Customer',
+  model: OpenRouterModel = OPENROUTER_MODELS.GPT4O_MINI
 ): Promise<string> {
   const bestOffer = getBestOffer(offers, priority)
 
@@ -127,11 +134,15 @@ Task: Respond strategically to push for better terms on your PRIMARY goal (${pri
 
 Your response:`
 
-  // Buyer uses GPT-4o Mini (cheap but strategic)
-  const response = await callOpenRouter(prompt, {
-    model: OPENROUTER_MODELS.GPT4O_MINI,
-    temperature: 0.85,
-  })
+  // Use direct OpenAI for GPT models, OpenRouter for others
+  const isDirectOpenAI = !model.includes('/')
+  const response = isDirectOpenAI
+    ? await callOpenAI(prompt, { model: model as OpenAIModel, temperature: 0.85 })
+    : await callOpenRouter(prompt, {
+        model,
+        temperature: 0.85,
+        fallbackModel: OPENROUTER_MODELS.GPT4O_MINI,
+      })
 
   if (!response.success || !response.content) {
     // Intelligent fallback based on priority

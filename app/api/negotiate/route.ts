@@ -1,18 +1,20 @@
 import { NextRequest } from 'next/server'
 import { NegotiationOrchestrator, NegotiationUpdate } from '@/lib/agents/orchestrator'
 import { Priority } from '@/types/product'
+import { AIProvider } from '@/lib/api/ai-providers'
 
 export const runtime = 'nodejs' // Need Node runtime for streaming
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { product, quantity, priority, budget, userName } = body as {
+    const { product, quantity, priority, budget, userName, provider } = body as {
       product: string
       quantity: number
       priority: Priority
       budget: number
       userName?: string
+      provider?: AIProvider
     }
 
     // Validation
@@ -41,7 +43,8 @@ export async function POST(request: NextRequest) {
             // Stream each update to the client
             const data = `data: ${JSON.stringify(update)}\n\n`
             await writer.write(encoder.encode(data))
-          }
+          },
+          provider || 'openrouter'
         )
 
         await orchestrator.start()

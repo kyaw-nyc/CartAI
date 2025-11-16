@@ -14,6 +14,7 @@ export interface NegotiationRow {
   chat_messages: any[]
   negotiation_messages: any[]
   negotiation_result: any | null
+  provider_states: any | null
   created_at: string
   updated_at: string
 }
@@ -34,6 +35,7 @@ export async function saveNegotiation(conversation: SavedConversation, userId: s
     chat_messages: conversation.chatMessages,
     negotiation_messages: conversation.negotiationMessages,
     negotiation_result: conversation.negotiationResult,
+    provider_states: conversation.providerStates || null,
   }
 
   // Check if conversation has a UUID (from database) or timestamp ID (local only)
@@ -93,6 +95,7 @@ export async function loadNegotiations(userId: string): Promise<SavedConversatio
     selectedPriority: row.selected_priority,
     negotiationMessages: row.negotiation_messages || [],
     negotiationResult: row.negotiation_result,
+    providerStates: row.provider_states || undefined,
   }))
 }
 

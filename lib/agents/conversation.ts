@@ -1,4 +1,4 @@
-import { callOpenRouter, OPENROUTER_MODELS } from '../api/openrouter'
+import { callOpenAI } from '../api/openai-direct'
 import { ChatMessage } from '@/types/negotiation'
 
 export interface ConversationResponse {
@@ -15,7 +15,7 @@ export interface ConversationResponse {
 
 /**
  * Conversation agent handles initial chat with user to understand their needs
- * Uses Gemini Flash for fast, cost-effective conversational responses
+ * Uses GPT-4o via your direct OpenAI API for best quality responses
  */
 export async function handleConversation(
   userMessage: string,
@@ -53,10 +53,11 @@ Respond in JSON format:
 
 IMPORTANT: Be friendly and natural. Don't ask for ALL info at once. Extract progressively.`
 
-  // Conversation uses GPT-4o Mini (cheap for simple chat)
-  const response = await callOpenRouter(prompt, {
-    model: OPENROUTER_MODELS.GPT4O_MINI,
+  // Conversation uses GPT-4o (your direct OpenAI API for best quality)
+  const response = await callOpenAI(prompt, {
+    model: 'gpt-4o',
     temperature: 0.7,
+    maxTokens: 500,
   })
 
   if (!response.success || !response.content || !response.content.trim()) {

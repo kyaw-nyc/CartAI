@@ -65,6 +65,7 @@ export async function callOpenRouter(
     temperature?: number
     maxTokens?: number
     systemPrompt?: string
+    fallbackModel?: OpenRouterModel
   } = {}
 ): Promise<OpenRouterResponse> {
   const {
@@ -72,6 +73,7 @@ export async function callOpenRouter(
     temperature = 0.7,
     maxTokens = 1000,
     systemPrompt,
+    fallbackModel,
   } = options
 
   try {
@@ -101,6 +103,16 @@ export async function callOpenRouter(
     }
   } catch (error) {
     console.error('OpenRouter API error:', error)
+    // Try fallback model once if provided
+    if (fallbackModel && fallbackModel !== model) {
+      console.warn(`Retrying with fallback model ${fallbackModel}`)
+      return callOpenRouter(prompt, {
+        model: fallbackModel,
+        temperature,
+        maxTokens,
+        systemPrompt,
+      })
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -163,21 +175,10 @@ export async function callOpenRouterWithFallback(
   }
 ): Promise<OpenRouterResponse> {
   // Try primary model
-  const primaryResponse = await callOpenRouter(prompt, {
+  return callOpenRouter(prompt, {
     model: options.primaryModel,
     systemPrompt: options.systemPrompt,
     temperature: options.temperature,
-  })
-
-  if (primaryResponse.success) {
-    return primaryResponse
-  }
-
-  // Fallback to secondary model
-  console.warn(`Primary model ${options.primaryModel} failed, trying ${options.fallbackModel}`)
-  return callOpenRouter(prompt, {
-    model: options.fallbackModel,
-    systemPrompt: options.systemPrompt,
-    temperature: options.temperature,
+    fallbackModel: options.fallbackModel,
   })
 }

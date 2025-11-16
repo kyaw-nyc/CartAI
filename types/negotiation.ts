@@ -1,7 +1,16 @@
 import { Priority } from './product'
 import { AgentMessage } from './agent'
+import { AIProvider } from '@/lib/api/ai-providers'
 
 export type { AgentMessage }
+
+export interface ProviderNegotiationState {
+  isNegotiating: boolean
+  messages: AgentMessage[]
+  currentBestOffer: Offer | null
+  progress: number
+  result: NegotiationResult | null
+}
 
 export interface Offer {
   id: string
@@ -33,6 +42,7 @@ export interface NegotiationResult {
   alternatives: Offer[]
   totalRounds: number
   duration: number
+  provider?: string
 }
 
 export interface NegotiationState {
@@ -76,4 +86,5 @@ export interface SavedConversation {
   selectedPriority: Priority | null
   negotiationMessages: AgentMessage[]
   negotiationResult: NegotiationResult | null
+  providerStates?: Record<AIProvider, ProviderNegotiationState>
 }

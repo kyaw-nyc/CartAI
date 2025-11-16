@@ -1,9 +1,34 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { ChatMessage, NegotiationResult, AgentMessage, SavedConversation } from '@/types/negotiation'
+import { ChatMessage, NegotiationResult, AgentMessage, SavedConversation, ProviderNegotiationState } from '@/types/negotiation'
 import { Priority } from '@/types/product'
 import { Offer } from '@/types/negotiation'
 import { saveNegotiation, loadNegotiations, deleteNegotiation as deleteNegotiationDb } from '@/lib/supabase/negotiations'
+import { AIProvider } from '@/lib/api/ai-providers'
+
+export const createInitialProviderStates = (): Record<AIProvider, ProviderNegotiationState> => ({
+  openrouter: {
+    isNegotiating: false,
+    messages: [],
+    currentBestOffer: null,
+    progress: 0,
+    result: null,
+  },
+  anthropic: {
+    isNegotiating: false,
+    messages: [],
+    currentBestOffer: null,
+    progress: 0,
+    result: null,
+  },
+  gemini: {
+    isNegotiating: false,
+    messages: [],
+    currentBestOffer: null,
+    progress: 0,
+    result: null,
+  },
+})
 
 interface NegotiationStore {
   // Current conversation ID
@@ -29,18 +54,18 @@ interface NegotiationStore {
   showPrioritySelector: boolean
   setShowPrioritySelector: (show: boolean) => void
 
-  // Negotiation state
-  isNegotiating: boolean
-  negotiationMessages: AgentMessage[]
-  currentBestOffer: Offer | null
-  negotiationProgress: number
-  addNegotiationMessage: (message: AgentMessage) => void
-  updateCurrentBest: (offer: Offer, progress: number) => void
-  startNegotiation: () => void
+  // Active provider
+  activeProvider: AIProvider
+  setActiveProvider: (provider: AIProvider) => void
 
-  // Results
-  negotiationResult: NegotiationResult | null
-  setNegotiationResult: (result: NegotiationResult) => void
+  // Provider-specific negotiation states
+  providerStates: Record<AIProvider, ProviderNegotiationState>
+
+  // Negotiation actions (work with active provider)
+  addNegotiationMessage: (message: AgentMessage, provider?: AIProvider) => void
+  updateCurrentBest: (offer: Offer, progress: number, provider?: AIProvider) => void
+  startNegotiation: (provider?: AIProvider) => void
+  setNegotiationResult: (result: NegotiationResult, provider?: AIProvider) => void
 
   // Conversation history
   savedConversations: SavedConversation[]
@@ -66,15 +91,15 @@ export const useNegotiationStore = create<NegotiationStore>()(
       budget: null,
       selectedPriority: null,
       showPrioritySelector: false,
-      isNegotiating: false,
-      negotiationMessages: [],
-      currentBestOffer: null,
-      negotiationProgress: 0,
-      negotiationResult: null,
+      activeProvider: 'openrouter' as AIProvider,
+      providerStates: createInitialProviderStates(),
       savedConversations: [],
 
       // Set user ID
       setUserId: (userId) => set({ userId }),
+
+      // Set active provider
+      setActiveProvider: (provider) => set({ activeProvider: provider }),
 
       // Chat actions
       addChatMessage: (message) =>
@@ -103,42 +128,73 @@ export const useNegotiationStore = create<NegotiationStore>()(
         }),
 
       // Negotiation
-      startNegotiation: () =>
-        set({
-          isNegotiating: true,
-          negotiationMessages: [],
-          currentBestOffer: null,
-          negotiationProgress: 0,
-          negotiationResult: null,
-        }),
-
-      addNegotiationMessage: (message) =>
+      startNegotiation: (provider) => {
+        const targetProvider = provider || get().activeProvider
         set((state) => ({
-          negotiationMessages: [...state.negotiationMessages, message],
-        })),
+          providerStates: {
+            ...state.providerStates,
+            [targetProvider]: {
+              isNegotiating: true,
+              messages: [],
+              currentBestOffer: null,
+              progress: 0,
+              result: null,
+            },
+          },
+        }))
+      },
 
-      updateCurrentBest: (offer, progress) =>
-        set({
-          currentBestOffer: offer,
-          negotiationProgress: progress,
-        }),
+      addNegotiationMessage: (message, provider) => {
+        const targetProvider = provider || get().activeProvider
+        set((state) => ({
+          providerStates: {
+            ...state.providerStates,
+            [targetProvider]: {
+              ...state.providerStates[targetProvider],
+              messages: [...state.providerStates[targetProvider].messages, message],
+            },
+          },
+        }))
+      },
 
-      setNegotiationResult: (result) =>
-        set((state) => {
-          // Auto-save when negotiation completes
-          const newState = {
-            negotiationResult: result,
-            isNegotiating: false,
-            negotiationProgress: 100,
-          }
+      updateCurrentBest: (offer, progress, provider) => {
+        const targetProvider = provider || get().activeProvider
+        set((state) => ({
+          providerStates: {
+            ...state.providerStates,
+            [targetProvider]: {
+              ...state.providerStates[targetProvider],
+              currentBestOffer: offer,
+              progress,
+            },
+          },
+        }))
+      },
 
-          // Save conversation after setting result
+      setNegotiationResult: (result, provider) => {
+        const targetProvider = provider || get().activeProvider
+        set((state) => ({
+          providerStates: {
+            ...state.providerStates,
+            [targetProvider]: {
+              ...state.providerStates[targetProvider],
+              result,
+              isNegotiating: false,
+              progress: 100,
+            },
+          },
+        }))
+
+        // Save conversation after all providers complete
+        const allComplete = Object.values(get().providerStates).every(
+          (state) => !state.isNegotiating
+        )
+        if (allComplete) {
           setTimeout(() => {
             get().saveCurrentConversation()
           }, 0)
-
-          return newState
-        }),
+        }
+      },
 
       // Conversation history
       saveCurrentConversation: async () => {
@@ -151,10 +207,13 @@ export const useNegotiationStore = create<NegotiationStore>()(
           quantity,
           budget,
           selectedPriority,
-          negotiationMessages,
-          negotiationResult,
+          providerStates,
           savedConversations,
         } = state
+        // Keep backward compatibility: store the active provider's messages/result at conversation level
+        const activeNegotiationState = providerStates[state.activeProvider]
+        const negotiationMessages = activeNegotiationState.messages
+        const negotiationResult = activeNegotiationState.result
 
         // Generate title from product or first message
         const title = product || chatMessages[0]?.content.slice(0, 30) || 'New Conversation'
@@ -177,6 +236,7 @@ export const useNegotiationStore = create<NegotiationStore>()(
             selectedPriority,
             negotiationMessages,
             negotiationResult,
+            providerStates,
           }
 
           set({
@@ -198,6 +258,7 @@ export const useNegotiationStore = create<NegotiationStore>()(
             selectedPriority,
             negotiationMessages,
             negotiationResult,
+            providerStates,
           }
 
           set({
@@ -226,6 +287,20 @@ export const useNegotiationStore = create<NegotiationStore>()(
           const conversation = state.savedConversations.find((conv) => conv.id === id)
           if (!conversation) return state
 
+          const providerStates =
+            conversation.providerStates ||
+            (() => {
+              const defaults = createInitialProviderStates()
+              defaults.openrouter = {
+                isNegotiating: false,
+                messages: conversation.negotiationMessages,
+                currentBestOffer: conversation.negotiationResult?.winner || null,
+                progress: conversation.negotiationResult ? 100 : 0,
+                result: conversation.negotiationResult,
+              }
+              return defaults
+            })()
+
           return {
             currentConversationId: id,
             chatMessages: conversation.chatMessages,
@@ -234,11 +309,8 @@ export const useNegotiationStore = create<NegotiationStore>()(
             budget: conversation.budget,
             selectedPriority: conversation.selectedPriority,
             showPrioritySelector: false,
-            isNegotiating: false,
-            negotiationMessages: conversation.negotiationMessages,
-            currentBestOffer: null,
-            negotiationProgress: conversation.negotiationResult ? 100 : 0,
-            negotiationResult: conversation.negotiationResult,
+            activeProvider: 'openrouter' as AIProvider,
+            providerStates,
           }
         }),
 
@@ -261,11 +333,8 @@ export const useNegotiationStore = create<NegotiationStore>()(
                 budget: null,
                 selectedPriority: null,
                 showPrioritySelector: false,
-                isNegotiating: false,
-                negotiationMessages: [],
-                currentBestOffer: null,
-                negotiationProgress: 0,
-                negotiationResult: null,
+                activeProvider: 'openrouter' as AIProvider,
+                providerStates: createInitialProviderStates(),
               }
             : {}),
         }))
@@ -288,11 +357,8 @@ export const useNegotiationStore = create<NegotiationStore>()(
           budget: null,
           selectedPriority: null,
           showPrioritySelector: false,
-          isNegotiating: false,
-          negotiationMessages: [],
-          currentBestOffer: null,
-          negotiationProgress: 0,
-          negotiationResult: null,
+          activeProvider: 'openrouter' as AIProvider,
+          providerStates: createInitialProviderStates(),
         }),
 
       // Reset (same as start new conversation)

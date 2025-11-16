@@ -2,8 +2,9 @@ import { Priority } from '@/types/product'
 import { Offer, NegotiationResult, AgentMessage } from '@/types/negotiation'
 import { getBuyerConfig, generateBuyerRequest, generateBuyerResponse } from './buyer'
 import { SELLER_PROFILES, generateSellerOffer, generateSellerResponse } from './sellers'
-import { callOpenRouter, OPENROUTER_MODELS } from '../api/openrouter'
+import { callOpenRouter, OPENROUTER_MODELS, OpenRouterModel } from '../api/openrouter'
 import { getIndustryAverage, calculateCarbonSavings, carbonToMiles } from '../utils/carbon'
+import { AIProvider, getProviderConfig } from '../api/ai-providers'
 
 export interface NegotiationUpdate {
   type: 'message' | 'metric' | 'complete'
@@ -25,6 +26,9 @@ export class NegotiationOrchestrator {
   private budget: number
   private priority: Priority
   private userName: string
+  private provider: AIProvider
+  private buyerModel: OpenRouterModel
+  private sellerModels: { premium: OpenRouterModel; standard: OpenRouterModel; budget: OpenRouterModel }
   private totalRounds = 6
   private currentRound = 0
   private allOffers: Offer[] = []
@@ -37,7 +41,8 @@ export class NegotiationOrchestrator {
     budget: number,
     priority: Priority,
     userName: string,
-    onUpdate: (update: NegotiationUpdate) => void
+    onUpdate: (update: NegotiationUpdate) => void,
+    provider: AIProvider = 'openrouter'
   ) {
     this.product = product
     this.quantity = quantity
@@ -45,6 +50,12 @@ export class NegotiationOrchestrator {
     this.priority = priority
     this.userName = userName
     this.onUpdate = onUpdate
+    this.provider = provider
+
+    // Get provider configuration
+    const config = getProviderConfig(provider)
+    this.buyerModel = config.buyerModel
+    this.sellerModels = config.sellerModels
   }
 
   /**
@@ -56,7 +67,14 @@ export class NegotiationOrchestrator {
 
     // Round 1: Buyer makes initial request
     this.currentRound = 1
-    const initialRequest = await generateBuyerRequest(this.product, this.quantity, this.priority, buyerConfig, this.userName)
+    const initialRequest = await generateBuyerRequest(
+      this.product,
+      this.quantity,
+      this.priority,
+      buyerConfig,
+      this.userName,
+      this.buyerModel
+    )
 
     this.addMessage('buyer', initialRequest)
     this.sendUpdate('message', { message: this.messages[this.messages.length - 1] })
@@ -65,10 +83,29 @@ export class NegotiationOrchestrator {
     await this.delay(500)
 
     // Sellers respond with initial offers
-    for (const profile of SELLER_PROFILES) {
-      const offer = await generateSellerOffer(profile, this.product, this.quantity, initialRequest, this.currentRound)
+    for (let i = 0; i < SELLER_PROFILES.length; i++) {
+      const profile = SELLER_PROFILES[i]
+      // Assign model: premium seller gets premium model, standard gets standard, budget gets budget
+      const sellerModel = i === 0 ? this.sellerModels.premium : i === 1 ? this.sellerModels.standard : this.sellerModels.budget
 
-      const response = await generateSellerResponse(profile, this.product, this.quantity, initialRequest, offer, this.userName)
+      const offer = await generateSellerOffer(
+        profile,
+        this.product,
+        this.quantity,
+        initialRequest,
+        this.currentRound,
+        this.provider
+      )
+
+      const response = await generateSellerResponse(
+        profile,
+        this.product,
+        this.quantity,
+        initialRequest,
+        offer,
+        this.userName,
+        sellerModel
+      )
 
       this.allOffers.push(offer)
       this.addMessage('seller', response, profile.id, profile.name)
@@ -98,7 +135,8 @@ export class NegotiationOrchestrator {
         buyerConfig,
         this.allOffers,
         round,
-        this.userName
+        this.userName,
+        this.buyerModel
       )
 
       this.addMessage('buyer', buyerResponse)
@@ -107,16 +145,28 @@ export class NegotiationOrchestrator {
       await this.delay(500)
 
       // Sellers counter with improved offers
-      for (const profile of SELLER_PROFILES) {
+      for (let i = 0; i < SELLER_PROFILES.length; i++) {
+        const profile = SELLER_PROFILES[i]
+        const sellerModel = i === 0 ? this.sellerModels.premium : i === 1 ? this.sellerModels.standard : this.sellerModels.budget
+
         const improvedOffer = await generateSellerOffer(
           profile,
           this.product,
           this.quantity,
           buyerResponse,
-          this.currentRound
+          this.currentRound,
+          this.provider
         )
 
-        const response = await generateSellerResponse(profile, this.product, this.quantity, buyerResponse, improvedOffer, this.userName)
+        const response = await generateSellerResponse(
+          profile,
+          this.product,
+          this.quantity,
+          buyerResponse,
+          improvedOffer,
+          this.userName,
+          sellerModel
+        )
 
         this.allOffers.push(improvedOffer)
         this.addMessage('seller', response, profile.id, profile.name)
@@ -168,6 +218,7 @@ export class NegotiationOrchestrator {
       alternatives,
       totalRounds: this.totalRounds,
       duration: Math.round(duration / 1000), // Convert to seconds
+      provider: this.provider,
     }
   }
 
@@ -193,6 +244,7 @@ Be specific about trade-offs. Keep it under 80 words.`
     const response = await callOpenRouter(prompt, {
       model: OPENROUTER_MODELS.CLAUDE_OPUS,
       temperature: 0.9,
+      fallbackModel: OPENROUTER_MODELS.GPT4O_MINI,
     })
 
     if (!response.success || !response.content) {
