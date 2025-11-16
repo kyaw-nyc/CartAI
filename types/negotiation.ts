@@ -1,6 +1,8 @@
 import { Priority } from './product'
 import { AgentMessage } from './agent'
 
+export type { AgentMessage }
+
 export interface Offer {
   id: string
   sellerId: string
