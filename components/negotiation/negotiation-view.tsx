@@ -25,10 +25,10 @@ export function NegotiationView({ messages, currentBest, progress }: Negotiation
   return (
     <div className="flex h-full max-h-[600px] gap-4">
       {/* Left: Agent Messages */}
-      <Card className="flex flex-1 flex-col border-white/10 bg-white/5 p-4">
+      <Card className="flex flex-1 flex-col border border-white/20 bg-white/5 p-4 backdrop-blur-sm">
         <div className="mb-3 flex items-center justify-between border-b border-white/10 pb-3">
           <h3 className="text-sm font-semibold text-white">Negotiation Chat</h3>
-          <Badge variant="secondary" className="bg-blue-600 text-white">
+          <Badge variant="secondary" className="border border-white/30 bg-white text-black">
             Live
           </Badge>
         </div>
@@ -46,8 +46,8 @@ export function NegotiationView({ messages, currentBest, progress }: Negotiation
                 <div
                   className={`max-w-[80%] rounded-lg px-3 py-2 ${
                     message.role === 'buyer'
-                      ? 'bg-blue-600/80 text-white'
-                      : 'bg-white/10 text-white/90'
+                      ? 'border border-white/30 bg-white text-black'
+                      : 'border border-white/20 bg-white/10 text-white/90 backdrop-blur-sm'
                   }`}
                 >
                   {message.role === 'seller' && message.sellerName && (
@@ -70,7 +70,7 @@ export function NegotiationView({ messages, currentBest, progress }: Negotiation
       </Card>
 
       {/* Right: Metrics Panel */}
-      <Card className="flex w-80 flex-col border-white/10 bg-white/5 p-4">
+      <Card className="flex w-80 flex-col border border-white/20 bg-white/5 p-4 backdrop-blur-sm">
         <div className="mb-3 border-b border-white/10 pb-3">
           <h3 className="text-sm font-semibold text-white">Live Metrics</h3>
         </div>
@@ -97,7 +97,7 @@ export function NegotiationView({ messages, currentBest, progress }: Negotiation
                 <span className="text-xs font-semibold uppercase tracking-wide text-white/60">
                   Current Best
                 </span>
-                <Badge className="bg-green-600 text-white">{currentBest.sellerName}</Badge>
+                <Badge className="border border-white/30 bg-white text-black">{currentBest.sellerName}</Badge>
               </div>
 
               <div className="space-y-2">

@@ -24,6 +24,7 @@ export class NegotiationOrchestrator {
   private quantity: number
   private budget: number
   private priority: Priority
+  private userName: string
   private totalRounds = 6
   private currentRound = 0
   private allOffers: Offer[] = []
@@ -35,12 +36,14 @@ export class NegotiationOrchestrator {
     quantity: number,
     budget: number,
     priority: Priority,
+    userName: string,
     onUpdate: (update: NegotiationUpdate) => void
   ) {
     this.product = product
     this.quantity = quantity
     this.budget = budget
     this.priority = priority
+    this.userName = userName
     this.onUpdate = onUpdate
   }
 
@@ -53,7 +56,7 @@ export class NegotiationOrchestrator {
 
     // Round 1: Buyer makes initial request
     this.currentRound = 1
-    const initialRequest = await generateBuyerRequest(this.product, this.quantity, this.priority, buyerConfig)
+    const initialRequest = await generateBuyerRequest(this.product, this.quantity, this.priority, buyerConfig, this.userName)
 
     this.addMessage('buyer', initialRequest)
     this.sendUpdate('message', { message: this.messages[this.messages.length - 1] })
@@ -65,7 +68,7 @@ export class NegotiationOrchestrator {
     for (const profile of SELLER_PROFILES) {
       const offer = await generateSellerOffer(profile, this.product, this.quantity, initialRequest, this.currentRound)
 
-      const response = await generateSellerResponse(profile, this.product, this.quantity, initialRequest, offer)
+      const response = await generateSellerResponse(profile, this.product, this.quantity, initialRequest, offer, this.userName)
 
       this.allOffers.push(offer)
       this.addMessage('seller', response, profile.id, profile.name)
@@ -94,7 +97,8 @@ export class NegotiationOrchestrator {
         this.priority,
         buyerConfig,
         this.allOffers,
-        round
+        round,
+        this.userName
       )
 
       this.addMessage('buyer', buyerResponse)
@@ -112,7 +116,7 @@ export class NegotiationOrchestrator {
           this.currentRound
         )
 
-        const response = await generateSellerResponse(profile, this.product, this.quantity, buyerResponse, improvedOffer)
+        const response = await generateSellerResponse(profile, this.product, this.quantity, buyerResponse, improvedOffer, this.userName)
 
         this.allOffers.push(improvedOffer)
         this.addMessage('seller', response, profile.id, profile.name)

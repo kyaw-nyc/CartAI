@@ -7,11 +7,12 @@ export const runtime = 'nodejs' // Need Node runtime for streaming
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { product, quantity, priority, budget } = body as {
+    const { product, quantity, priority, budget, userName } = body as {
       product: string
       quantity: number
       priority: Priority
       budget: number
+      userName?: string
     }
 
     // Validation
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest) {
           quantity,
           budget,
           priority,
+          userName || 'Customer',
           async (update: NegotiationUpdate) => {
             // Stream each update to the client
             const data = `data: ${JSON.stringify(update)}\n\n`

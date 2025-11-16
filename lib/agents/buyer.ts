@@ -45,7 +45,8 @@ export async function generateBuyerRequest(
   product: string,
   quantity: number,
   priority: Priority,
-  config: BuyerAgentConfig
+  config: BuyerAgentConfig,
+  userName: string = 'Customer'
 ): Promise<string> {
   const priorityDescriptions = {
     speed: 'fastest possible delivery',
@@ -53,7 +54,7 @@ export async function generateBuyerRequest(
     price: 'best price while maintaining quality',
   }
 
-  const prompt = `You are a professional buyer agent representing a customer.
+  const prompt = `You are a professional buyer agent representing ${userName}.
 
 Product needed: ${quantity} ${product}
 Primary priority: ${priorityDescriptions[priority]}
@@ -62,8 +63,9 @@ ${config.constraints.maxCarbon ? `Target carbon: Under ${config.constraints.maxC
 Max delivery time: ${config.constraints.maxDays} days
 
 Write a clear, professional opening request to sellers (2-3 sentences).
+Start with "Dear Seller," and sign off with "Best regards, ${userName}".
 Emphasize your priority (${priority}) and be specific about requirements.
-Keep it under 60 words.`
+Keep it under 60 words total.`
 
   // Buyer uses GPT-4o Mini (cheap but strategic)
   const response = await callOpenRouter(prompt, {
@@ -74,11 +76,11 @@ Keep it under 60 words.`
   if (!response.success || !response.content) {
     // Fallback based on priority
     if (priority === 'speed') {
-      return `Looking for ${quantity} ${product} with fastest possible delivery (ideally 1-2 days). Budget is flexible for speed.`
+      return `Dear Seller, I am seeking ${quantity} ${product} with fastest possible delivery (ideally 1-2 days). Budget is flexible for speed. Please confirm availability and delivery within 7 days. Best regards, ${userName}`
     } else if (priority === 'carbon') {
-      return `Seeking ${quantity} ${product} with lowest carbon footprint. Must have verified sustainability certifications. Willing to wait for eco-friendly options.`
+      return `Dear Seller, Seeking ${quantity} ${product} with lowest carbon footprint. Must have verified sustainability certifications. Willing to wait for eco-friendly options. Best regards, ${userName}`
     } else {
-      return `Need ${quantity} ${product} at best possible price. Must deliver within ${config.constraints.maxDays} days.`
+      return `Dear Seller, I need ${quantity} ${product} at best possible price. Must deliver within ${config.constraints.maxDays} days. Best regards, ${userName}`
     }
   }
 
@@ -94,7 +96,8 @@ export async function generateBuyerResponse(
   priority: Priority,
   config: BuyerAgentConfig,
   offers: Offer[],
-  roundNumber: number
+  roundNumber: number,
+  userName: string = 'Customer'
 ): Promise<string> {
   const bestOffer = getBestOffer(offers, priority)
 
@@ -105,7 +108,7 @@ export async function generateBuyerResponse(
     )
     .join('\n')
 
-  const prompt = `You are a strategic buyer agent. Round ${roundNumber}/6 of negotiation.
+  const prompt = `You are a strategic buyer agent representing ${userName}. Round ${roundNumber}/6 of negotiation.
 
 Your priority: ${priority}
 Your constraints: ${JSON.stringify(config.constraints)}

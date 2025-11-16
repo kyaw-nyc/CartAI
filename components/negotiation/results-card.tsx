@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { formatPrice, formatCarbon, formatDelivery } from '@/lib/utils/formatters'
 import { getCarbonComparison } from '@/lib/utils/carbon'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, TrendingDown, Truck, Award, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
+import { CheckCircle2, TrendingDown, Truck, Award, MessageSquare, ChevronDown, ChevronUp, Leaf } from 'lucide-react'
 
 interface ResultsCardProps {
   result: NegotiationResult
@@ -28,70 +28,64 @@ export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlt
       transition={{ duration: 0.5 }}
       className="mx-auto w-full max-w-3xl"
     >
-      <Card className="border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-6">
+      <Card className="border border-white/20 bg-white/5 p-8 backdrop-blur-sm">
         {/* Header */}
-        <div className="mb-6 text-center">
+        <div className="mb-8 text-center">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring' }}
-            className="mb-3 flex justify-center"
+            className="mb-4 flex justify-center"
           >
-            <div className="rounded-full bg-green-600 p-3">
-              <Sparkles className="h-8 w-8 text-white" />
+            <div className="rounded-full bg-white p-3">
+              <CheckCircle2 className="h-8 w-8 text-black" />
             </div>
           </motion.div>
-          <h2 className="text-2xl font-bold text-white">Perfect! Found the best option</h2>
-          <p className="mt-1 text-sm text-white/60">Here&apos;s what we negotiated for you</p>
+          <h2 className="text-3xl font-semibold text-white">Perfect! Found the best option</h2>
+          <p className="mt-2 text-base text-white/60">Here&apos;s what we negotiated for you</p>
         </div>
 
         {/* Winner Card */}
-        <div className="mb-6 rounded-lg border border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-white">🏆 {winner.sellerName}</h3>
-            <Badge className="bg-green-600 text-white">Winner</Badge>
+        <div className="mb-6 rounded-lg border border-white/30 bg-white/10 p-6 backdrop-blur-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-2xl font-semibold text-white">{winner.sellerName}</h3>
+            <Badge className="border border-white/30 bg-white text-sm font-medium text-black">Winner</Badge>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="flex items-center space-x-2 rounded-lg bg-white/5 p-3">
-              <div className="rounded-full bg-blue-600/20 p-2">
-                <TrendingDown className="h-4 w-4 text-blue-400" />
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="flex flex-col space-y-1 rounded-lg border border-white/20 bg-white/5 p-4">
+              <div className="flex items-center space-x-2">
+                <TrendingDown className="h-4 w-4 text-white/60" />
+                <p className="text-xs font-medium text-white/60">Price</p>
               </div>
-              <div>
-                <p className="text-xs text-white/60">Price</p>
-                <p className="text-lg font-bold text-white">{formatPrice(winner.price)}</p>
-              </div>
+              <p className="text-2xl font-semibold text-white">{formatPrice(winner.price)}</p>
             </div>
 
-            <div className="flex items-center space-x-2 rounded-lg bg-white/5 p-3">
-              <div className="rounded-full bg-green-600/20 p-2">
-                <span className="text-lg">🌱</span>
+            <div className="flex flex-col space-y-1 rounded-lg border border-white/20 bg-white/5 p-4">
+              <div className="flex items-center space-x-2">
+                <Leaf className="h-4 w-4 text-white/60" />
+                <p className="text-xs font-medium text-white/60">Carbon</p>
               </div>
-              <div>
-                <p className="text-xs text-white/60">Carbon</p>
-                <p className="text-lg font-bold text-green-400">{formatCarbon(winner.carbonFootprint)}</p>
-              </div>
+              <p className="text-2xl font-semibold text-white">{formatCarbon(winner.carbonFootprint)}</p>
             </div>
 
-            <div className="flex items-center space-x-2 rounded-lg bg-white/5 p-3">
-              <div className="rounded-full bg-purple-600/20 p-2">
-                <Truck className="h-4 w-4 text-purple-400" />
+            <div className="flex flex-col space-y-1 rounded-lg border border-white/20 bg-white/5 p-4">
+              <div className="flex items-center space-x-2">
+                <Truck className="h-4 w-4 text-white/60" />
+                <p className="text-xs font-medium text-white/60">Delivery</p>
               </div>
-              <div>
-                <p className="text-xs text-white/60">Delivery</p>
-                <p className="text-lg font-bold text-white">{formatDelivery(winner.deliveryDays)}</p>
-              </div>
+              <p className="text-2xl font-semibold text-white">{formatDelivery(winner.deliveryDays)}</p>
             </div>
           </div>
 
           {/* Certifications */}
           {winner.certifications.length > 0 && (
             <div className="mt-4 flex items-center space-x-2">
-              <Award className="h-4 w-4 text-yellow-500" />
-              <span className="text-xs text-white/60">Verified:</span>
-              <div className="flex flex-wrap gap-1">
+              <Award className="h-4 w-4 text-white/60" />
+              <span className="text-sm text-white/60">Verified:</span>
+              <div className="flex flex-wrap gap-1.5">
                 {winner.certifications.map((cert) => (
-                  <Badge key={cert} variant="secondary" className="bg-yellow-600/20 text-xs text-yellow-400">
+                  <Badge key={cert} className="border border-white/30 bg-white/10 text-xs text-white">
                     {cert}
                   </Badge>
                 ))}
@@ -102,27 +96,27 @@ export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlt
 
         {/* Environmental Impact */}
         {carbonSaved > 0 && (
-          <div className="mb-6 rounded-lg border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-green-500/10 p-5">
+          <div className="mb-6 rounded-lg border border-white/20 bg-white/5 p-5 backdrop-blur-sm">
             <div className="flex items-start space-x-3">
-              <div className="rounded-full bg-emerald-600/20 p-2">
-                <span className="text-2xl">🌍</span>
+              <div className="rounded-lg bg-white/10 p-2">
+                <Leaf className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-white">Environmental Impact</h4>
-                <p className="mt-1 text-sm text-white/80">
-                  You&apos;re saving <span className="font-bold text-emerald-400">{formatCarbon(carbonSaved)}</span> vs
+                <p className="mt-1 text-sm text-white/70">
+                  You&apos;re saving <span className="font-semibold text-white">{formatCarbon(carbonSaved)}</span> vs
                   average!
                 </p>
-                <p className="mt-1 text-sm text-emerald-300">{getCarbonComparison(carbonSaved)}</p>
+                <p className="mt-1 text-sm text-white/60">{getCarbonComparison(carbonSaved)}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Reasoning */}
-        <div className="mb-6 rounded-lg bg-white/5 p-4">
-          <h4 className="mb-2 text-sm font-semibold text-white">💡 Why this won:</h4>
-          <p className="text-sm text-white/80">{reasoning}</p>
+        <div className="mb-6 rounded-lg border border-white/20 bg-white/5 p-5 backdrop-blur-sm">
+          <h4 className="mb-2 text-sm font-semibold text-white">Why this won</h4>
+          <p className="text-sm leading-relaxed text-white/70">{reasoning}</p>
         </div>
 
         {/* Alternatives Section */}
@@ -132,32 +126,32 @@ export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlt
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="space-y-3 overflow-hidden"
+              className="mb-6 space-y-3 overflow-hidden"
             >
-              <h4 className="text-sm font-semibold text-white">Alternative Options:</h4>
+              <h4 className="text-sm font-semibold text-white">Alternative Options</h4>
               {alternatives.map((alt, index) => (
                 <div
                   key={alt.id}
-                  className="rounded-lg border border-white/10 bg-white/5 p-4"
+                  className="rounded-lg border border-white/20 bg-white/5 p-4 backdrop-blur-sm"
                 >
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-3 flex items-center justify-between">
                     <span className="font-semibold text-white">{alt.sellerName}</span>
-                    <Badge variant="secondary" className="bg-white/10 text-white">
+                    <Badge className="border border-white/30 bg-white/10 text-xs text-white">
                       Option {index + 2}
                     </Badge>
                   </div>
-                  <div className="grid gap-2 text-sm sm:grid-cols-3">
-                    <div>
-                      <span className="text-white/60">Price: </span>
-                      <span className="font-medium text-white">{formatPrice(alt.price)}</span>
+                  <div className="grid gap-3 text-sm sm:grid-cols-3">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-white/60">Price</span>
+                      <span className="font-semibold text-white">{formatPrice(alt.price)}</span>
                     </div>
-                    <div>
-                      <span className="text-white/60">Carbon: </span>
-                      <span className="font-medium text-white">{formatCarbon(alt.carbonFootprint)}</span>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-white/60">Carbon</span>
+                      <span className="font-semibold text-white">{formatCarbon(alt.carbonFootprint)}</span>
                     </div>
-                    <div>
-                      <span className="text-white/60">Delivery: </span>
-                      <span className="font-medium text-white">{formatDelivery(alt.deliveryDays)}</span>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-white/60">Delivery</span>
+                      <span className="font-semibold text-white">{formatDelivery(alt.deliveryDays)}</span>
                     </div>
                   </div>
                 </div>
@@ -173,20 +167,20 @@ export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlt
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="max-h-96 space-y-3 overflow-hidden"
+              className="mb-6 max-h-96 space-y-3 overflow-hidden"
             >
-              <h4 className="text-sm font-semibold text-white">Negotiation History:</h4>
-              <div className="max-h-80 space-y-2 overflow-y-auto rounded-lg bg-white/5 p-4">
+              <h4 className="text-sm font-semibold text-white">Negotiation History</h4>
+              <div className="max-h-80 space-y-2 overflow-y-auto rounded-lg border border-white/20 bg-white/5 p-4 backdrop-blur-sm">
                 {negotiationMessages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`rounded-lg p-3 ${
+                    className={`rounded-lg border p-3 backdrop-blur-sm ${
                       msg.role === 'buyer'
-                        ? 'bg-blue-600/30 text-white'
-                        : 'bg-white/10 text-white/90'
+                        ? 'border-white/30 bg-white/10 text-white'
+                        : 'border-white/20 bg-white/5 text-white/90'
                     }`}
                   >
-                    <div className="mb-1 text-xs font-semibold opacity-70">
+                    <div className="mb-1 text-xs font-semibold text-white/70">
                       {msg.role === 'buyer' ? 'Your Agent' : msg.sellerName}
                     </div>
                     <p className="text-sm">{msg.content}</p>
@@ -202,13 +196,13 @@ export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlt
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               onClick={onComplete}
-              className="flex-1 rounded-lg bg-white px-6 py-3 font-semibold text-[#0a1929] transition hover:bg-white/90"
+              className="flex-1 rounded-lg border border-white/30 bg-white px-6 py-3 font-semibold text-black transition hover:bg-white/90"
             >
               Complete Purchase
             </button>
             <button
               onClick={() => setShowAlternatives(!showAlternatives)}
-              className="flex-1 rounded-lg border border-white/20 px-6 py-3 font-semibold text-white transition hover:bg-white/10"
+              className="flex-1 rounded-lg border border-white/30 bg-transparent px-6 py-3 font-semibold text-white transition hover:bg-white/5"
             >
               {showAlternatives ? (
                 <>
@@ -227,7 +221,7 @@ export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlt
           {/* View Negotiation History Button */}
           <button
             onClick={() => setShowNegotiationHistory(!showNegotiationHistory)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/20 px-6 py-3 font-semibold text-white transition hover:bg-white/10"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/30 bg-transparent px-6 py-3 font-semibold text-white transition hover:bg-white/5"
           >
             <MessageSquare className="h-4 w-4" />
             {showNegotiationHistory ? 'Hide' : 'View'} Negotiation Conversation
@@ -240,7 +234,7 @@ export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlt
         </div>
 
         {/* Stats */}
-        <div className="mt-6 flex items-center justify-center space-x-6 text-xs text-white/50">
+        <div className="mt-6 flex items-center justify-center space-x-6 text-xs text-white/60">
           <span>{result.totalRounds} negotiation rounds</span>
           <span>•</span>
           <span>{result.duration}s elapsed</span>

@@ -110,7 +110,8 @@ export async function generateSellerResponse(
   product: string,
   quantity: number,
   buyerMessage: string,
-  currentOffer: Offer
+  currentOffer: Offer,
+  buyerName: string = 'Customer'
 ): Promise<string> {
   const prompt = `You are ${profile.name}, a seller with these characteristics:
 - Sustainability focus: ${profile.personality.sustainabilityFocus}
@@ -120,9 +121,9 @@ export async function generateSellerResponse(
 
 Product: ${quantity} ${product}
 
-Buyer said: "${buyerMessage}"
+Buyer (${buyerName}) said: "${buyerMessage}"
 
-Respond as this seller in 1-2 sentences. Be strategic, stay in character, and highlight your strengths.
+Respond as this seller in 1-2 sentences. Address the buyer by their name "${buyerName}". Be strategic, stay in character, and highlight your strengths.
 Keep it under 50 words. Be persuasive but not pushy.`
 
   // Different sellers use different AI models via OpenRouter
@@ -151,11 +152,11 @@ Keep it under 50 words. Be persuasive but not pushy.`
   if (!response.success || !response.content) {
     // Fallback response based on profile
     if (profile.personality.sustainabilityFocus === 'very_high') {
-      return `We offer premium sustainable ${product} with ${currentOffer.certifications.join(' & ')} certifications at $${currentOffer.price}.`
+      return `Dear ${buyerName}, we offer premium sustainable ${product} with ${currentOffer.certifications.join(' & ')} certifications at $${currentOffer.price}.`
     } else if (profile.personality.pricePoint === 'budget') {
-      return `Best price in the market - $${currentOffer.price} for ${quantity} units. Ready to ship in ${currentOffer.deliveryDays} days!`
+      return `Dear ${buyerName}, best price in the market - $${currentOffer.price} for ${quantity} units. Ready to ship in ${currentOffer.deliveryDays} days!`
     } else {
-      return `We can deliver ${quantity} ${product} in ${currentOffer.deliveryDays} day${currentOffer.deliveryDays > 1 ? 's' : ''} for $${currentOffer.price}.`
+      return `Dear ${buyerName}, we can deliver ${quantity} ${product} in ${currentOffer.deliveryDays} day${currentOffer.deliveryDays > 1 ? 's' : ''} for $${currentOffer.price}.`
     }
   }
 

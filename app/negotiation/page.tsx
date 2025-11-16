@@ -171,6 +171,7 @@ export default function NegotiationPage() {
           quantity: quantity || 1,
           priority,
           budget: budget || 100,
+          userName: userName,
         }),
       })
 
@@ -220,22 +221,22 @@ export default function NegotiationPage() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#0a1a2e] text-white">
+    <div className="flex h-screen w-full overflow-hidden bg-black text-white">
       {/* Animated Background */}
       <Squares
         direction="diagonal"
-        speed={0.5}
-        squareSize={40}
-        borderColor="rgba(255,255,255,0.05)"
-        hoverFillColor="rgba(255,255,255,0.1)"
-        className="pointer-events-none fixed inset-0 z-0 opacity-60"
+        speed={0.45}
+        squareSize={46}
+        borderColor="rgba(255,255,255,0.14)"
+        hoverFillColor="rgba(255,255,255,0.06)"
+        className="pointer-events-none fixed inset-0 z-0 opacity-90"
       />
 
       {/* Sidebar */}
-      <aside className="relative z-10 flex h-full w-64 min-w-[16rem] max-w-[16rem] shrink-0 flex-col overflow-y-auto border-r border-white/10 bg-[#0d1f35]/80 backdrop-blur-sm">
+      <aside className="relative z-10 flex h-full w-64 min-w-[16rem] max-w-[16rem] shrink-0 flex-col overflow-y-auto border-r border-white/10 bg-black/80 backdrop-blur-sm">
         {/* Logo */}
           <div className="flex items-center gap-2 border-b border-white/10 px-4 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-bold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-sm font-bold text-black">
               CA
             </div>
             <span className="text-base font-semibold">CartAI</span>
@@ -245,7 +246,7 @@ export default function NegotiationPage() {
         <div className="border-b border-white/10 p-3">
           <button
             onClick={startNewConversation}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/30 bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
           >
             <Plus className="h-4 w-4" />
             New Chat
@@ -261,7 +262,7 @@ export default function NegotiationPage() {
                 key={conv.id}
                 className={`group relative flex flex-col rounded-lg px-3 py-2 transition ${
                   currentConversationId === conv.id
-                    ? 'bg-blue-600/20 text-white'
+                    ? 'bg-white/10 text-white'
                     : 'text-white/70 hover:bg-white/5 hover:text-white'
                 }`}
               >
@@ -356,7 +357,7 @@ export default function NegotiationPage() {
               </div>
 
               {/* Input Box */}
-              <div className="relative rounded-xl bg-[#0f1f35]/60 p-4 shadow-2xl backdrop-blur-sm">
+              <div className="relative rounded-xl border border-white/20 bg-white/5 p-4 shadow-2xl backdrop-blur-sm">
                 <textarea
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
@@ -365,7 +366,7 @@ export default function NegotiationPage() {
                   rows={3}
                   disabled={isLoading}
                   ref={initialInputRef}
-                  className="w-full resize-none bg-transparent text-sm text-white/90 placeholder-white/30 outline-none disabled:opacity-50"
+                  className="w-full resize-none bg-transparent text-sm text-white/90 placeholder-white/40 outline-none disabled:opacity-50"
                 />
 
                 {/* Send Button */}
@@ -373,7 +374,7 @@ export default function NegotiationPage() {
                   <button
                     onClick={handleSendMessage}
                     disabled={!inputValue.trim() || isLoading}
-                    className="rounded-lg bg-blue-600 p-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
+                    className="rounded-lg border border-white/30 bg-white p-2 text-black transition hover:bg-white/90 disabled:opacity-50"
                   >
                     <Send className="h-4 w-4" />
                   </button>
@@ -394,8 +395,8 @@ export default function NegotiationPage() {
                     <div
                       className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                         message.type === 'user'
-                          ? 'bg-blue-600 text-white'
-                          : 'border border-white/10 bg-white/5 text-white'
+                          ? 'border border-white/30 bg-white text-black'
+                          : 'border border-white/20 bg-white/5 text-white backdrop-blur-sm'
                       }`}
                     >
                       <p className="text-sm">{message.content}</p>
@@ -417,9 +418,9 @@ export default function NegotiationPage() {
             </div>
 
             {/* Input Area - Bottom */}
-            <div className="border-t border-white/10 bg-[#0d1f35]/80 px-8 py-4 backdrop-blur-sm">
+            <div className="border-t border-white/10 bg-black/80 px-8 py-4 backdrop-blur-sm">
               <div className="mx-auto max-w-3xl">
-                <div className="relative rounded-xl bg-[#0f1f35]/60 p-3">
+                <div className="relative rounded-xl border border-white/20 bg-white/5 p-3">
                   <div className="flex items-end gap-2">
                     <textarea
                       value={inputValue}
@@ -429,12 +430,12 @@ export default function NegotiationPage() {
                       rows={1}
                       disabled={isLoading}
                       ref={chatInputRef}
-                      className="max-h-32 flex-1 resize-none bg-transparent text-sm text-white/90 placeholder-white/30 outline-none disabled:opacity-50"
+                      className="max-h-32 flex-1 resize-none bg-transparent text-sm text-white/90 placeholder-white/40 outline-none disabled:opacity-50"
                     />
                     <button
                       onClick={handleSendMessage}
                       disabled={!inputValue.trim() || isLoading}
-                      className="rounded-lg bg-blue-600 p-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
+                      className="rounded-lg border border-white/30 bg-white p-2 text-black transition hover:bg-white/90 disabled:opacity-50"
                     >
                       <Send className="h-4 w-4" />
                     </button>
@@ -446,8 +447,8 @@ export default function NegotiationPage() {
         )}
 
         {/* Help Button */}
-        <Link href="/learn-more" className="absolute bottom-6 right-6 rounded-full bg-blue-600 p-3 shadow-lg transition hover:bg-blue-700">
-          <HelpCircle className="h-5 w-5" />
+        <Link href="/learn-more" className="absolute bottom-6 right-6 rounded-full border border-white/30 bg-white p-3 shadow-lg transition hover:bg-white/90">
+          <HelpCircle className="h-5 w-5 text-black" />
         </Link>
       </main>
     </div>
