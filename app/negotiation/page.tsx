@@ -304,6 +304,12 @@ export default function NegotiationPage() {
             <Plus className="h-4 w-4" />
             New Chat
           </button>
+          <Link
+            href="/map"
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
+          >
+            Map
+          </Link>
         </div>
 
         {/* Conversation History */}
