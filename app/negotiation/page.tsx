@@ -18,6 +18,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 export default function NegotiationPage() {
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const initialInputRef = useRef<HTMLTextAreaElement | null>(null)
   const chatInputRef = useRef<HTMLTextAreaElement | null>(null)
 
@@ -52,30 +53,37 @@ export default function NegotiationPage() {
   const [userName, setUserName] = useState('User')
   const supabase = createSupabaseBrowserClient()
 
-  // Fetch user name on mount
+  // Check auth and fetch user name on mount
   useEffect(() => {
-    const fetchUserName = async () => {
+    const checkAuthAndFetchUserName = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        // First try to get from user metadata
-        const fullName = user.user_metadata?.full_name
-        if (fullName) {
-          setUserName(fullName)
-        } else {
-          // Fallback to profiles table
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', user.id)
-            .single()
 
-          if (profile?.full_name) {
-            setUserName(profile.full_name)
-          }
+      if (!user) {
+        // Redirect to login if not authenticated
+        window.location.href = '/login'
+        return
+      }
+
+      // First try to get from user metadata
+      const fullName = user.user_metadata?.full_name
+      if (fullName) {
+        setUserName(fullName)
+      } else {
+        // Fallback to profiles table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single()
+
+        if (profile?.full_name) {
+          setUserName(profile.full_name)
         }
       }
+
+      setIsCheckingAuth(false)
     }
-    fetchUserName()
+    checkAuthAndFetchUserName()
   }, [supabase])
 
   useEffect(() => {
@@ -218,6 +226,18 @@ export default function NegotiationPage() {
     if (hour < 12) return 'Good Morning'
     if (hour < 18) return 'Good Afternoon'
     return 'Good Evening'
+  }
+
+  // Show loading while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-black text-white">
+        <div className="text-center">
+          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-white mx-auto"></div>
+          <p className="text-white/60">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
