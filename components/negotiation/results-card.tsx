@@ -7,16 +7,17 @@ import { Badge } from '@/components/ui/badge'
 import { formatPrice, formatCarbon, formatDelivery } from '@/lib/utils/formatters'
 import { getCarbonComparison } from '@/lib/utils/carbon'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle2, TrendingDown, Truck, Award, MessageSquare, ChevronDown, ChevronUp, Leaf } from 'lucide-react'
+import { CheckCircle2, TrendingDown, Truck, Award, MessageSquare, ChevronDown, ChevronUp, Leaf, RefreshCw } from 'lucide-react'
 
 interface ResultsCardProps {
   result: NegotiationResult
   negotiationMessages: import('@/types/negotiation').AgentMessage[]
   onComplete: () => void
   onShowAlternatives: () => void
+  onRenegotiate?: () => void
 }
 
-export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlternatives }: ResultsCardProps) {
+export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlternatives, onRenegotiate }: ResultsCardProps) {
   const { winner, reasoning, carbonSaved, carbonSavedInMiles, alternatives } = result
   const [showNegotiationHistory, setShowNegotiationHistory] = useState(false)
   const [showAlternatives, setShowAlternatives] = useState(false)
@@ -242,6 +243,17 @@ export function ResultsCard({ result, negotiationMessages, onComplete, onShowAlt
               <ChevronDown className="h-4 w-4" />
             )}
           </button>
+
+          {/* Renegotiate Button */}
+          {onRenegotiate && (
+            <button
+              onClick={onRenegotiate}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/30 bg-transparent px-6 py-3 font-semibold text-white transition hover:bg-white/5"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Renegotiate
+            </button>
+          )}
         </div>
 
         {/* Stats */}

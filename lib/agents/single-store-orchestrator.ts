@@ -48,7 +48,7 @@ export class SingleStoreOrchestrator {
   }
 
   async run() {
-    const rounds = 6
+    const rounds = 4 // Reduced from 6 for faster negotiations
     const seller = SELLER_PROFILES.find((s) => s.id === this.storeId)
 
     if (!seller) {
@@ -84,7 +84,7 @@ export class SingleStoreOrchestrator {
 
     // Negotiation rounds
     for (let round = 1; round <= rounds; round++) {
-      // Seller generates offer and response
+      // Seller generates offer and response in parallel
       const offer = await generateSellerOffer(
         seller,
         this.product,
@@ -94,7 +94,8 @@ export class SingleStoreOrchestrator {
         'openrouter' // Not used for single store
       )
 
-      const sellerMessage = await generateSellerResponse(
+      // Generate seller message and send offer update immediately in parallel
+      const sellerMessagePromise = generateSellerResponse(
         seller,
         this.product,
         this.quantity,
@@ -105,6 +106,19 @@ export class SingleStoreOrchestrator {
       )
 
       currentOffer = offer
+
+      // Send metrics update immediately (don't wait for message)
+      const progress = Math.round((round / rounds) * 100)
+      this.onUpdate({
+        type: 'metric',
+        data: {
+          currentBest: offer,
+          progress,
+        },
+      })
+
+      // Wait for seller message to complete
+      const sellerMessage = await sellerMessagePromise
 
       this.onUpdate({
         type: 'message',
@@ -119,15 +133,6 @@ export class SingleStoreOrchestrator {
             model: seller.model as string,
             offer: offer,
           },
-        },
-      })
-
-      const progress = Math.round((round / rounds) * 100)
-      this.onUpdate({
-        type: 'metric',
-        data: {
-          currentBest: offer,
-          progress,
         },
       })
 
@@ -158,20 +163,52 @@ export class SingleStoreOrchestrator {
         })
       }
 
-      // Small delay between rounds
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      // Reduced delay between rounds for faster experience
+      await new Promise((resolve) => setTimeout(resolve, 200))
     }
 
-    // Final result
+    // Determine negotiation outcome
+    const finalOffer = currentOffer!
+    const pricePerUnit = finalOffer.price / this.quantity
+    const budgetPerUnit = this.budget
+
+    // Calculate how well the buyer did
+    const priceDiff = budgetPerUnit - pricePerUnit
+    const priceRatio = pricePerUnit / budgetPerUnit
+
+    let reasoning: string
+    let whoWon: 'buyer' | 'seller' | 'fair'
+
+    if (priceRatio <= 0.85) {
+      // Buyer got a great deal (15%+ under budget)
+      whoWon = 'buyer'
+      reasoning = `Excellent negotiation! ${seller.name} agreed to $${finalOffer.price} (${Math.round((1 - priceRatio) * 100)}% under your budget). You saved $${Math.round(priceDiff * this.quantity)} with ${finalOffer.deliveryDays} days delivery and ${finalOffer.carbonFootprint}kg CO₂ footprint. ${seller.name} made concessions to win your business.`
+    } else if (priceRatio <= 0.95) {
+      // Fair negotiation (5-15% under budget)
+      whoWon = 'fair'
+      reasoning = `Good negotiation! ${seller.name} offered $${finalOffer.price} (${Math.round((1 - priceRatio) * 100)}% under budget). Fair deal with ${finalOffer.deliveryDays} days delivery and ${finalOffer.carbonFootprint}kg CO₂. Both parties made reasonable compromises.`
+    } else if (priceRatio <= 1.05) {
+      // Close to budget (within 5%)
+      whoWon = 'fair'
+      reasoning = `${seller.name} held firm at $${finalOffer.price} (near your $${Math.round(budgetPerUnit * this.quantity)} budget). They maintained their pricing but delivered on ${finalOffer.deliveryDays} days and ${finalOffer.carbonFootprint}kg CO₂. Market-rate deal.`
+    } else if (priceRatio <= 1.15) {
+      // Slightly over budget (5-15% over)
+      whoWon = 'seller'
+      reasoning = `${seller.name} stayed strong at $${finalOffer.price} (${Math.round((priceRatio - 1) * 100)}% over your ${budgetPerUnit * this.quantity} budget). They defended their premium pricing for ${finalOffer.deliveryDays}-day delivery and ${finalOffer.carbonFootprint}kg CO₂. Consider if the ${finalOffer.certifications.length > 0 ? 'certified quality' : 'quality'} justifies the premium.`
+    } else {
+      // Significantly over budget (15%+ over)
+      whoWon = 'seller'
+      reasoning = `${seller.name} held firm at $${finalOffer.price} (${Math.round((priceRatio - 1) * 100)}% over budget). They maintained premium pricing, betting on their ${this.priority === 'speed' ? `fast ${finalOffer.deliveryDays}-day delivery` : this.priority === 'carbon' ? `low ${finalOffer.carbonFootprint}kg carbon footprint` : 'quality and certifications'}. They won this negotiation by not backing down.`
+    }
+
     const result: NegotiationResult = {
-      winner: currentOffer!,
+      winner: finalOffer,
       alternatives: [],
-      reasoning: `Negotiated with ${seller.name} using ${seller.model}. Final offer: $${currentOffer!.price} for ${this.quantity} ${this.product}, ${currentOffer!.deliveryDays} days delivery, ${currentOffer!.carbonFootprint}kg CO₂.`,
-      savingsSummary: {
-        moneyVsBudget: this.budget - currentOffer!.price / this.quantity,
-        carbonVsAverage: 0,
-        timeVsAverage: 0,
-      },
+      reasoning,
+      carbonSaved: 0,
+      carbonSavedInMiles: 0,
+      totalRounds: rounds,
+      duration: 0, // Will be calculated by the caller
     }
 
     this.onUpdate({

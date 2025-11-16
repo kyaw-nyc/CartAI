@@ -247,14 +247,14 @@ export default function NegotiationPage() {
   // Run single-store negotiation
   const runSingleStoreNegotiation = async (priority: Priority, storeId: string) => {
     try {
-      // Map storeId to buyer model
-      const buyerModelMap: Record<string, string> = {
-        store_hm: 'gpt-4o-mini',
-        store_zara: 'anthropic/claude-3-haiku',
-        store_hugo: 'deepseek/deepseek-chat',
+      // Map storeId to buyer model and provider
+      const storeConfig: Record<string, { buyerModel: string; provider: AIProvider }> = {
+        store_hm: { buyerModel: 'gpt-4o-mini', provider: 'openrouter' },
+        store_zara: { buyerModel: 'anthropic/claude-3-haiku', provider: 'anthropic' },
+        store_hugo: { buyerModel: 'deepseek/deepseek-chat', provider: 'gemini' },
       }
 
-      const buyerModel = buyerModelMap[storeId] || 'gpt-4o-mini'
+      const config = storeConfig[storeId] || { buyerModel: 'gpt-4o-mini', provider: 'openrouter' as AIProvider }
 
       const response = await fetch('/api/negotiate-store', {
         method: 'POST',
@@ -266,7 +266,7 @@ export default function NegotiationPage() {
           budget: budget || 100,
           userName: userName,
           storeId,
-          buyerModel,
+          buyerModel: config.buyerModel,
         }),
       })
 
@@ -295,13 +295,13 @@ export default function NegotiationPage() {
 
             if (data.type === 'message' && data.data.message) {
               console.log(`[${storeId}] New message:`, data.data.message)
-              addNegotiationMessage(data.data.message, 'openrouter')
+              addNegotiationMessage(data.data.message, config.provider)
             } else if (data.type === 'metric' && data.data.currentBest && data.data.progress !== undefined) {
               console.log(`[${storeId}] Metric update:`, data.data.progress, '%')
-              updateCurrentBest(data.data.currentBest, data.data.progress, 'openrouter')
+              updateCurrentBest(data.data.currentBest, data.data.progress, config.provider)
             } else if (data.type === 'complete' && data.data.result) {
               console.log(`[${storeId}] Negotiation complete!`, data.data.result)
-              setNegotiationResult(data.data.result, 'openrouter')
+              setNegotiationResult(data.data.result, config.provider)
             }
           }
         }
@@ -332,7 +332,19 @@ export default function NegotiationPage() {
     // Check if this is a single-store negotiation from the map
     if (selectedStoreId) {
       console.log(`Starting single-store negotiation with: ${selectedStoreId}`)
-      startNegotiation('openrouter')
+
+      // Map storeId to provider for UI state
+      const storeProviderMap: Record<string, AIProvider> = {
+        store_hm: 'openrouter',
+        store_zara: 'anthropic',
+        store_hugo: 'gemini',
+      }
+      const provider = storeProviderMap[selectedStoreId] || 'openrouter'
+
+      // Start negotiation only for the specific provider
+      startNegotiation(provider)
+      setActiveProvider(provider)
+
       await runSingleStoreNegotiation(dominant, selectedStoreId)
       // Clear the selected store after negotiation
       setSelectedStoreId(null)
@@ -482,6 +494,11 @@ export default function NegotiationPage() {
                 }}
                 onShowAlternatives={() => {
                   alert(`Alternatives: ${negotiationResult.alternatives.map((a) => a.sellerName).join(', ')}`)
+                }}
+                onRenegotiate={() => {
+                  // Reset negotiation state for the active provider
+                  reset()
+                  setShowPrioritySelector(true)
                 }}
               />
             </div>

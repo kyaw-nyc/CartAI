@@ -29,7 +29,7 @@ export class NegotiationOrchestrator {
   private provider: AIProvider
   private buyerModel: OpenRouterModel
   private sellerModels: { premium: OpenRouterModel; standard: OpenRouterModel; budget: OpenRouterModel }
-  private totalRounds = 6
+  private totalRounds = 4 // Reduced from 6 for faster negotiations
   private currentRound = 0
   private allOffers: Offer[] = []
   private messages: AgentMessage[] = []
@@ -80,7 +80,7 @@ export class NegotiationOrchestrator {
     this.sendUpdate('message', { message: this.messages[this.messages.length - 1] })
 
     // Small delay for UX
-    await this.delay(500)
+    await this.delay(200)
 
     // Sellers respond with initial offers
     for (let i = 0; i < SELLER_PROFILES.length; i++) {
@@ -111,7 +111,7 @@ export class NegotiationOrchestrator {
       this.addMessage('seller', response, profile.id, profile.name)
       this.sendUpdate('message', { message: this.messages[this.messages.length - 1] })
 
-      await this.delay(300)
+      await this.delay(100)
     }
 
     // Update metrics after first round
@@ -121,7 +121,7 @@ export class NegotiationOrchestrator {
       progress: (this.currentRound / this.totalRounds) * 100,
     })
 
-    await this.delay(800)
+    await this.delay(200)
 
     // Rounds 2-6: Negotiation back and forth
     for (let round = 2; round <= this.totalRounds; round++) {
@@ -142,7 +142,7 @@ export class NegotiationOrchestrator {
       this.addMessage('buyer', buyerResponse)
       this.sendUpdate('message', { message: this.messages[this.messages.length - 1] })
 
-      await this.delay(500)
+      await this.delay(150)
 
       // Sellers counter with improved offers
       for (let i = 0; i < SELLER_PROFILES.length; i++) {
@@ -172,7 +172,7 @@ export class NegotiationOrchestrator {
         this.addMessage('seller', response, profile.id, profile.name)
         this.sendUpdate('message', { message: this.messages[this.messages.length - 1] })
 
-        await this.delay(300)
+        await this.delay(100)
       }
 
       // Update metrics
@@ -182,7 +182,7 @@ export class NegotiationOrchestrator {
         progress: (round / this.totalRounds) * 100,
       })
 
-      await this.delay(600)
+      await this.delay(150)
     }
 
     // Final decision

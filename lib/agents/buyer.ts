@@ -72,10 +72,11 @@ Keep it under 60 words total.`
   // Use direct OpenAI for GPT models, OpenRouter for others
   const isDirectOpenAI = !model.includes('/')
   const response = isDirectOpenAI
-    ? await callOpenAI(prompt, { model: model as OpenAIModel, temperature: 0.8 })
+    ? await callOpenAI(prompt, { model: model as OpenAIModel, temperature: 0.5, maxTokens: 100 })
     : await callOpenRouter(prompt, {
         model,
-        temperature: 0.8,
+        temperature: 0.5,
+        maxTokens: 100,
         fallbackModel: OPENROUTER_MODELS.GPT4O_MINI,
       })
 
@@ -126,21 +127,25 @@ ${offersText}
 
 Current best offer (by your priority): ${bestOffer.sellerName}
 
-Task: Respond strategically to push for better terms on your PRIMARY goal (${priority}).
-- If optimizing for ${priority === 'speed' ? 'SPEED' : priority === 'carbon' ? 'CARBON' : 'PRICE'}, focus on improving that metric
+Task: Respond strategically to negotiate better terms on your PRIMARY goal (${priority}).
+- If optimizing for ${priority === 'speed' ? 'SPEED' : priority === 'carbon' ? 'CARBON' : 'PRICE'}, focus on that metric
 - Reference specific sellers and their offers
 - Be persuasive but professional
-- Keep under 50 words
+- If round is 4+ and offer is reasonable, consider showing willingness to close deal
+- Sometimes accept compromises if seller is firm
+- Vary your negotiation tactics (don't always push for lower price)
+Keep under 50 words.
 
 Your response:`
 
   // Use direct OpenAI for GPT models, OpenRouter for others
   const isDirectOpenAI = !model.includes('/')
   const response = isDirectOpenAI
-    ? await callOpenAI(prompt, { model: model as OpenAIModel, temperature: 0.85 })
+    ? await callOpenAI(prompt, { model: model as OpenAIModel, temperature: 0.6, maxTokens: 80 })
     : await callOpenRouter(prompt, {
         model,
-        temperature: 0.85,
+        temperature: 0.6,
+        maxTokens: 80,
         fallbackModel: OPENROUTER_MODELS.GPT4O_MINI,
       })
 

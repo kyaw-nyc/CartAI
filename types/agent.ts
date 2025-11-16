@@ -1,6 +1,12 @@
 export type AgentRole = 'user' | 'buyer' | 'seller' | 'system'
 
-export type AgentModel = 'gemini-2.0-flash-exp' | 'gemini-1.5-flash-8b' | 'gpt-4o' | 'gpt-4-turbo'
+export type AgentModel =
+  | 'gemini-2.0-flash-exp'
+  | 'gemini-1.5-flash-8b'
+  | 'gpt-4o'
+  | 'gpt-4-turbo'
+  | 'anthropic/claude-3.5-sonnet'
+  | 'deepseek/deepseek-chat'
 
 export interface AgentMessage {
   id: string
@@ -10,6 +16,7 @@ export interface AgentMessage {
   sellerId?: string
   sellerName?: string
   model?: string
+  offer?: any // Offer data when seller makes an offer
   metadata?: Record<string, unknown>
 }
 
